@@ -1,4 +1,4 @@
-import type { Session } from '../types';
+import type { HistoryEntry, Session } from '../types';
 
 const SESSIONS_KEY = 'jogabr.sessions';
 
@@ -54,4 +54,20 @@ export function loadSettings(): Settings {
 
 export function saveSettings(settings: Settings): void {
   write(SETTINGS_KEY, settings);
+}
+
+const HISTORY_KEY = 'jogabr.history';
+
+// Newest first
+export function loadHistory(): HistoryEntry[] {
+  const entries = read<HistoryEntry[]>(HISTORY_KEY, []);
+  return Array.isArray(entries) ? entries.sort((a, b) => b.date.localeCompare(a.date)) : [];
+}
+
+export function saveHistoryEntry(entry: HistoryEntry): void {
+  write(HISTORY_KEY, [...loadHistory().filter((e) => e.id !== entry.id), entry]);
+}
+
+export function deleteHistoryEntry(id: string): void {
+  write(HISTORY_KEY, loadHistory().filter((e) => e.id !== id));
 }

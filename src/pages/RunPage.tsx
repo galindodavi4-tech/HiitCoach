@@ -19,9 +19,16 @@ import type { TimerState } from '../lib/timer';
 import { KIND_LABEL, stepColor, textOn } from '../lib/labels';
 import { formatClock } from '../lib/session';
 import ConfirmDialog from '../components/ConfirmDialog';
+import SummaryScreen from '../components/SummaryScreen';
 import { btnPrimary } from '../components/ui';
 
 type Timer = ReturnType<typeof createTimer>;
+
+interface Summary {
+  finished: boolean;
+  totalSeconds: number;
+  stepsCompleted: number;
+}
 
 const timedSeconds = (s: RunStep) => (s.mode === 'manual' ? 0 : s.seconds ?? 0);
 
@@ -41,6 +48,16 @@ export default function RunPage() {
   const [state, setState] = useState<TimerState | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
   const pausedForDialog = useRef(false);
+  const [stopped, setStopped] = useState<Summary | null>(null);
+
+  // Real training time: wall clock since start, minus time spent paused
+  const startedAt = useRef(0);
+  const pausedMs = useRef(0);
+  const pausedSince = useRef<number | null>(null);
+  const elapsedSeconds = () => {
+    const end = pausedSince.current ?? Date.now();
+    return Math.max(0, Math.round((end - startedAt.current - pausedMs.current) / 1000));
+  };
 
   useEffect(() => {
     if (steps.length === 0) return;
@@ -50,6 +67,11 @@ export default function RunPage() {
     const timer = createTimer(steps, {
       onTick: (s) => {
         setState(s);
+        if (s.paused && pausedSince.current === null) pausedSince.current = Date.now();
+        if (!s.paused && pausedSince.current !== null) {
+          pausedMs.current += Date.now() - pausedSince.current;
+          pausedSince.current = null;
+        }
         if (!s.step || s.paused || s.remainingMs === null) return;
         // Short beep at 3, 2 and 1 s before a timed step ends, once each
         const sec = Math.ceil(s.remainingMs / 1000);
@@ -65,6 +87,7 @@ export default function RunPage() {
         speak(step.voiceCue || step.name, settings);
       },
       onFinish: () => {
+        setStopped({ finished: true, totalSeconds: elapsedSeconds(), stepsCompleted: steps.length });
         finishBeeps(settings);
         vibrate([200, 100, 200, 100, 400], settings);
         speak('Treino concluído', settings);
@@ -73,6 +96,7 @@ export default function RunPage() {
     });
     timerRef.current = timer;
     keepScreenOn();
+    startedAt.current = Date.now();
     timer.start();
     return () => {
       timer.stop();
@@ -103,19 +127,16 @@ export default function RunPage() {
     );
   }
 
-  if (state?.finished) {
+  if (stopped) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4 bg-neutral-950 px-6 text-center">
-        <p className="text-6xl">🎉</p>
-        <h1 className="text-4xl font-black">Treino concluído!</h1>
-        <p className="text-2xl text-neutral-300">{session.name}</p>
-        <p className="text-xl text-neutral-400">
-          Tempo total <strong className="text-neutral-100 tabular-nums">{formatClock(totalSeconds)}</strong>
-        </p>
-        <button className={`${btnPrimary} mt-4 min-h-14 w-full max-w-sm text-xl`} onClick={() => navigate('/sessoes')}>
-          Voltar às sessões
-        </button>
-      </div>
+      <SummaryScreen
+        session={session}
+        finished={stopped.finished}
+        totalSeconds={stopped.totalSeconds}
+        stepsCompleted={stopped.stepsCompleted}
+        stepsTotal={steps.length}
+        onDone={() => navigate('/sessoes')}
+      />
     );
   }
 
@@ -233,7 +254,11 @@ export default function RunPage() {
           confirmLabel="Parar"
           onConfirm={() => {
             timer.stop();
-            navigate('/sessoes');
+            allowScreenOff();
+            stopSpeech();
+            setConfirmStop(false);
+            // Steps before the current one count as done
+            setStopped({ finished: false, totalSeconds: elapsedSeconds(), stepsCompleted: state.index });
           }}
           onCancel={() => {
             setConfirmStop(false);
