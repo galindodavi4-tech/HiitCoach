@@ -16,10 +16,13 @@ import { flatten } from '../lib/flatten';
 import type { RunStep } from '../lib/flatten';
 import { createTimer } from '../lib/timer';
 import type { TimerState } from '../lib/timer';
-import { KIND_LABEL, stepColor, textOn } from '../lib/labels';
+import { KIND_LABEL, stepColor } from '../lib/labels';
 import { formatClock } from '../lib/session';
+import { Check, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SummaryScreen from '../components/SummaryScreen';
+import Badge from '../components/pulso/Badge';
+import RingGauge from '../components/pulso/RingGauge';
 import { btnPrimary } from '../components/ui';
 
 type Timer = ReturnType<typeof createTimer>;
@@ -32,10 +35,21 @@ interface Summary {
 
 const timedSeconds = (s: RunStep) => (s.mode === 'manual' ? 0 : s.seconds ?? 0);
 
-function nextLabel(step: RunStep): string {
-  if (step.mode === 'manual') return `${step.name} · Manual`;
-  const time = formatClock(step.seconds ?? 0);
-  return step.mode === 'reps' ? `${step.name} · ${step.reps ?? 0}x` : `${step.name} · ${time}`;
+function nextDetail(step: RunStep): string {
+  if (step.mode === 'manual') return 'Manual';
+  return step.mode === 'reps' ? `${step.reps ?? 0} reps` : formatClock(step.seconds ?? 0);
+}
+
+// Ring diameter that fits the phone screen, in px
+function useRingSize(): number {
+  const measure = () => Math.round(Math.min(window.innerWidth - 64, window.innerHeight * 0.4, 340));
+  const [size, setSize] = useState(measure);
+  useEffect(() => {
+    const onResize = () => setSize(measure());
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return size;
 }
 
 export default function RunPage() {
@@ -44,6 +58,7 @@ export default function RunPage() {
   const session = useMemo(() => (id ? getSession(id) : undefined), [id]);
   const steps = useMemo(() => (session ? flatten(session.root) : []), [session]);
 
+  const ringSize = useRingSize();
   const timerRef = useRef<Timer | null>(null);
   const [state, setState] = useState<TimerState | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
@@ -118,11 +133,11 @@ export default function RunPage() {
 
   if (!session || steps.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-6 bg-neutral-950 px-6 text-center">
-        <p className="text-2xl text-neutral-300">
+      <div className="flex h-full flex-col items-center justify-center gap-6 bg-app px-6 text-center">
+        <p className="text-[17px] text-secondary">
           {session ? 'Esta sessão ainda não tem passos.' : 'Sessão não encontrada.'}
         </p>
-        <Link to="/sessoes" className={`${btnPrimary} inline-flex items-center`}>Voltar às sessões</Link>
+        <Link to="/sessoes" className={btnPrimary}>Voltar às sessões</Link>
       </div>
     );
   }
@@ -142,10 +157,9 @@ export default function RunPage() {
 
   const timer = timerRef.current;
   const step = state?.step ?? null;
-  if (!state || !step || !timer) return <div className="h-full bg-neutral-950" />;
+  if (!state || !step || !timer) return <div className="h-full bg-app" />;
 
-  const bg = stepColor(step);
-  const fg = textOn(bg);
+  const color = stepColor(step);
   const remainingSec = state.remainingMs === null ? null : Math.ceil(state.remainingMs / 1000);
 
   const doneInStep = remainingSec === null ? 0 : timedSeconds(step) - state.remainingMs! / 1000;
@@ -153,119 +167,185 @@ export default function RunPage() {
     ? (startsAt[state.index] + doneInStep) / totalSeconds
     : state.index / steps.length;
 
-  const controlBtn = 'min-h-16 rounded-2xl bg-black/25 text-xl font-bold active:scale-95 disabled:opacity-40';
+  // How much of the current timed step is left, for the ring
+  const stepFraction = remainingSec === null || timedSeconds(step) === 0
+    ? 1
+    : state.remainingMs! / 1000 / timedSeconds(step);
+  const next = state.next;
 
   return (
     <div
-      className="flex h-full flex-col transition-colors duration-300"
+      className="flex h-full justify-center bg-[var(--surface-void)]"
       // After a page reload there was no Start tap, so any tap here turns sound on
       onPointerDown={() => {
         if (!audioReady()) unlockAudio();
       }}
-      style={{
-        backgroundColor: bg,
-        color: fg,
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
     >
-      <div className="h-2 w-full bg-black/25">
-        <div className="h-full bg-current" style={{ width: `${Math.min(1, Math.max(0, progress)) * 100}%` }} />
-      </div>
-
-      <header className="flex items-center gap-3 px-4 pt-3">
-        <button
-          className="min-h-12 rounded-xl bg-black/25 px-4 text-lg font-bold active:scale-95"
-          onClick={() => {
-            // Hold the clock while the dialog is open, unless it was already stopped
-            pausedForDialog.current = remainingSec !== null && !state.paused;
-            if (pausedForDialog.current) timer.pause();
-            setConfirmStop(true);
-          }}
-        >
-          ✕ Parar
-        </button>
-        <div className="min-w-0 flex-1 text-right">
-          <p className="text-2xl font-bold">Rodada {step.round} de {step.totalRounds}</p>
-          <p className="truncate text-lg opacity-80">{step.blockName}</p>
+      <div
+        className="relative flex h-full w-full max-w-[430px] flex-col"
+        style={{
+          // Flat tint of the step colour: the whole screen changes with the step kind
+          backgroundColor: `color-mix(in oklab, ${color} 13%, var(--surface-app))`,
+          transition: 'background-color var(--dur-base) var(--ease-out)',
+          paddingTop: 'env(safe-area-inset-top)',
+        }}
+      >
+        <div className="h-1.5 w-full bg-[var(--p-carbon-700)]">
+          <div
+            className="h-full"
+            style={{
+              width: `${Math.min(1, Math.max(0, progress)) * 100}%`,
+              background: color,
+              boxShadow: `0 0 12px ${color}`,
+            }}
+          />
         </div>
-      </header>
 
-      <main className="flex flex-1 flex-col items-center justify-center px-4 text-center">
-        <p className="text-lg font-semibold uppercase tracking-wide opacity-80">{KIND_LABEL[step.kind]}</p>
-        <h1 className="mb-2 text-5xl leading-tight font-black">{step.name}</h1>
+        <header className="flex items-center justify-between gap-3 px-[var(--gutter)] pt-3">
+          <button
+            className="p-icon-btn p-icon-btn-ghost"
+            aria-label="Parar treino"
+            onClick={() => {
+              // Hold the clock while the dialog is open, unless it was already stopped
+              pausedForDialog.current = remainingSec !== null && !state.paused;
+              if (pausedForDialog.current) timer.pause();
+              setConfirmStop(true);
+            }}
+          >
+            <X size={22} strokeWidth={2} />
+          </button>
+          {state.paused ? (
+            <Badge color="var(--warning)">Pausado</Badge>
+          ) : (
+            <Badge color="var(--p-plasma-400)" live>Ao vivo</Badge>
+          )}
+          <div className="min-w-0 text-right">
+            <p className="p-label text-primary">
+              Rodada {step.round} de {step.totalRounds}
+            </p>
+            <p className="truncate text-[13px] text-muted">{step.blockName}</p>
+          </div>
+        </header>
 
-        {step.mode === 'manual' && (
-          <>
-            <p className="mb-6 text-3xl font-bold opacity-80">Manual</p>
-            <button
-              className="min-h-32 w-full max-w-md rounded-3xl bg-black/30 text-5xl font-black active:scale-95"
-              onClick={() => timer.next()}
-            >
-              CONCLUÍDO
+        <main className="flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-[var(--gutter)] text-center">
+          <div className="flex flex-col items-center gap-3">
+            <span className="font-mono text-[12px] font-medium tracking-[0.14em] uppercase" style={{ color }}>
+              {KIND_LABEL[step.kind]}
+            </span>
+            <h1 className="p-display text-[30px] leading-[1.08] font-semibold">{step.name}</h1>
+          </div>
+
+          {step.mode === 'manual' && (
+            <button className={`${btnPrimary} p-btn-lg h-28 w-full text-[18px]`} onClick={() => timer.next()}>
+              <Check size={26} strokeWidth={2.5} /> Concluído
             </button>
-          </>
-        )}
+          )}
 
-        {step.mode === 'reps' && (
-          <>
-            <p className="text-[30vw] leading-none font-black tabular-nums">{step.reps ?? 0}x</p>
-            {remainingSec !== null && (
-              <p className="text-[14vw] leading-none font-bold tabular-nums opacity-90">{formatClock(remainingSec)}</p>
-            )}
-          </>
-        )}
+          {step.mode === 'reps' && (
+            <RingGauge value={stepFraction} size={ringSize} color={color}>
+              <span className="flex items-baseline gap-1">
+                <span className="p-num" style={{ fontSize: Math.round(ringSize * 0.3), letterSpacing: '-0.05em' }}>
+                  {step.reps ?? 0}
+                </span>
+                <span className="p-unit text-[14px]">reps</span>
+              </span>
+              {remainingSec !== null && (
+                <span className="font-mono text-[18px] font-medium" style={{ color }}>
+                  {formatClock(remainingSec)}
+                </span>
+              )}
+            </RingGauge>
+          )}
 
-        {step.mode === 'time' && remainingSec !== null && (
-          <p className="text-[28vw] leading-none font-black tabular-nums">{formatClock(remainingSec)}</p>
-        )}
+          {step.mode === 'time' && remainingSec !== null && (
+            <RingGauge value={stepFraction} size={ringSize} color={color}>
+              <span
+                className="p-num"
+                style={{
+                  fontSize: Math.round(ringSize * (remainingSec >= 600 ? 0.2 : 0.25)),
+                  letterSpacing: '-0.05em',
+                }}
+              >
+                {formatClock(remainingSec)}
+              </span>
+            </RingGauge>
+          )}
 
-        {state.paused && <p className="mt-4 rounded-xl bg-black/30 px-6 py-2 text-3xl font-black">PAUSADO</p>}
-        {step.notes && <p className="mt-4 text-xl opacity-90">{step.notes}</p>}
-      </main>
+          {step.notes && <p className="max-w-sm text-[15px] text-secondary">{step.notes}</p>}
+        </main>
 
-      <div className="mx-4 mb-3 rounded-xl bg-black/25 px-4 py-3 text-xl">
-        {state.next ? (
-          <>
-            <span className="opacity-80">A seguir: </span>
-            <strong>{nextLabel(state.next)}</strong>
-          </>
-        ) : (
-          <strong>Último passo!</strong>
-        )}
-      </div>
-
-      <div className="grid grid-cols-3 gap-3 px-4 pb-4">
-        <button className={controlBtn} onClick={() => timer.previous()}>⏮ Voltar</button>
-        <button
-          className={controlBtn}
-          disabled={remainingSec === null}
-          onClick={() => (state.paused ? timer.resume() : timer.pause())}
+        {/* Docked action panel */}
+        <div
+          className="flex flex-col gap-3 border-t border-line bg-surface-1 px-[var(--gutter)] pt-3.5"
+          style={{ boxShadow: 'var(--shadow-sheet)', paddingBottom: 'calc(18px + env(safe-area-inset-bottom))' }}
         >
-          {state.paused ? '▶ Retomar' : '⏸ Pausar'}
-        </button>
-        <button className={controlBtn} onClick={() => timer.next()}>Pular ⏭</button>
-      </div>
+          <div className="flex min-h-11 items-center gap-3">
+            {next ? (
+              <>
+                <span className="p-label shrink-0">A seguir</span>
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-1.5 shrink-0 rounded-xs"
+                  style={{ background: stepColor(next) }}
+                />
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{next.name}</span>
+                <span className="shrink-0 font-mono text-[12px] tracking-[0.06em] text-muted uppercase">
+                  {nextDetail(next)}
+                </span>
+              </>
+            ) : (
+              <span className="p-label text-accent">Último passo. Vai até o fim.</span>
+            )}
+          </div>
 
-      {confirmStop && (
-        <ConfirmDialog
-          title="Parar o treino?"
-          message="O treino será encerrado."
-          confirmLabel="Parar"
-          onConfirm={() => {
-            timer.stop();
-            allowScreenOff();
-            stopSpeech();
-            setConfirmStop(false);
-            // Steps before the current one count as done
-            setStopped({ finished: false, totalSeconds: elapsedSeconds(), stepsCompleted: state.index });
-          }}
-          onCancel={() => {
-            setConfirmStop(false);
-            if (pausedForDialog.current) timer.resume();
-          }}
-        />
-      )}
+          <div className="flex items-center gap-3">
+            <button
+              className="p-icon-btn h-[60px] w-[60px]"
+              aria-label="Voltar ao passo anterior"
+              onClick={() => timer.previous()}
+            >
+              <SkipBack size={22} strokeWidth={2} />
+            </button>
+            <button
+              className={`p-btn p-btn-lg flex-1 ${state.paused ? 'p-btn-primary' : 'p-btn-secondary'}`}
+              disabled={remainingSec === null}
+              onClick={() => (state.paused ? timer.resume() : timer.pause())}
+            >
+              {state.paused ? (
+                <>
+                  <Play size={19} strokeWidth={2} fill="currentColor" /> Retomar
+                </>
+              ) : (
+                <>
+                  <Pause size={19} strokeWidth={2} fill="currentColor" /> Pausar
+                </>
+              )}
+            </button>
+            <button className="p-icon-btn h-[60px] w-[60px]" aria-label="Pular passo" onClick={() => timer.next()}>
+              <SkipForward size={22} strokeWidth={2} />
+            </button>
+          </div>
+        </div>
+        {confirmStop && (
+          <ConfirmDialog
+            title="Parar o treino?"
+            message="O treino será encerrado."
+            confirmLabel="Parar"
+            onConfirm={() => {
+              timer.stop();
+              allowScreenOff();
+              stopSpeech();
+              setConfirmStop(false);
+              // Steps before the current one count as done
+              setStopped({ finished: false, totalSeconds: elapsedSeconds(), stepsCompleted: state.index });
+            }}
+            onCancel={() => {
+              setConfirmStop(false);
+              if (pausedForDialog.current) timer.resume();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

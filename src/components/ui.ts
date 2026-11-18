@@ -1,10 +1,10 @@
-const btn = 'min-h-12 rounded-xl px-4 text-lg font-semibold transition active:scale-[0.97]';
+// PULSO class presets. The styles live in index.css (@layer components).
+export const btnPrimary = 'p-btn p-btn-primary';
+export const btnHeat = 'p-btn p-btn-heat';
+export const btnSecondary = 'p-btn p-btn-secondary';
+export const btnDanger = 'p-btn p-btn-danger';
+export const btnGhost = 'p-btn p-btn-ghost';
 
-export const btnPrimary = `${btn} bg-green-600 text-white`;
-export const btnSecondary = `${btn} bg-neutral-800 text-neutral-100`;
-export const btnDanger = `${btn} bg-red-600 text-white`;
+export const inputClass = 'p-input';
 
-export const inputClass =
-  'min-h-12 w-full rounded-xl border border-neutral-700 bg-neutral-900 px-4 text-lg text-neutral-100 outline-none focus:border-green-500';
-
-export const labelClass = 'mb-1 block text-sm font-semibold text-neutral-400';
+export const labelClass = 'p-label mb-2 block';

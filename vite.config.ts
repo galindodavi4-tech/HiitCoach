@@ -14,16 +14,16 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
-        name: 'JOGABR Treino',
-        short_name: 'JOGABR',
-        description: 'Timer de treino de futebol',
+        name: 'HIITCoach',
+        short_name: 'HIITCoach',
+        description: 'Timer de treino intervalado (HIIT)',
         lang: 'pt-BR',
         start_url: '/',
         scope: '/',
         display: 'standalone',
         orientation: 'portrait',
-        background_color: '#0a0a0a',
-        theme_color: '#0a0a0a',
+        background_color: '#08090B',
+        theme_color: '#08090B',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -32,7 +32,9 @@ export default defineConfig({
       },
       workbox: {
         // Cache every built file so the app works fully offline
-        globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,ico,webmanifest,woff2}'],
+        // pt-BR only needs the latin font subsets
+        globIgnores: ['**/*-cyrillic*', '**/*-vietnamese*'],
         // Any route (e.g. /rodar/abc) opens the cached app
         navigateFallback: 'index.html',
       },

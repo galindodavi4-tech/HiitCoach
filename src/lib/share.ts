@@ -125,7 +125,8 @@ export async function importSessionFile(file: File): Promise<Session> {
   try {
     if (!isObject(data)) fail('Este arquivo não contém uma sessão.');
     const name = requiredName(data.name, 'A sessão');
-    const category = data.category as Category;
+    // Files exported before the JogaBR → HIITCoach rename still say 'JogaBR'
+    const category = (data.category === 'JogaBR' ? 'HIITCoach' : data.category) as Category;
     if (!CATEGORIES.includes(category)) fail('A sessão tem uma categoria desconhecida.');
     if (!isObject(data.root) || data.root.type !== 'block') fail('A sessão não tem passos.');
 

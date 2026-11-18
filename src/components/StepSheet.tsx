@@ -4,6 +4,7 @@ import { KIND_COLOR, KIND_LABEL, MODE_LABEL } from '../lib/labels';
 import BottomSheet from './BottomSheet';
 import ChoiceGroup from './ChoiceGroup';
 import ConfirmDialog from './ConfirmDialog';
+import Switch from './pulso/Switch';
 import { btnDanger, btnPrimary, btnSecondary, inputClass, labelClass } from './ui';
 
 interface Props {
@@ -51,7 +52,7 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
 
   return (
     <BottomSheet title={isNew ? 'Novo passo' : 'Editar passo'} onClose={onClose}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div>
           <label className={labelClass} htmlFor="step-name">Nome</label>
           <input id="step-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
@@ -105,7 +106,7 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
                   onChange={(e) => setMinutes(e.target.value)}
                   aria-label="Minutos"
                 />
-                <span className="text-neutral-400">min</span>
+                <span className="p-unit">min</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -118,14 +119,14 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
                   onChange={(e) => setSeconds(e.target.value)}
                   aria-label="Segundos"
                 />
-                <span className="text-neutral-400">s</span>
+                <span className="p-unit">s</span>
               </label>
             </div>
           </div>
         )}
 
         {mode === 'manual' && (
-          <p className="text-neutral-400">No modo manual, o passo espera você tocar em CONCLUÍDO.</p>
+          <p className="text-[14px] text-muted">No modo manual, o passo espera você tocar em Concluído.</p>
         )}
 
         <div>
@@ -144,34 +145,38 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
           <textarea
             id="step-notes"
             rows={2}
-            className={`${inputClass} py-3`}
+            className={inputClass}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
           />
         </div>
 
-        <div className="flex min-h-12 items-center gap-3">
-          <label className="flex flex-1 items-center gap-3 text-lg">
-            <input
-              type="checkbox"
-              className="h-6 w-6 accent-green-600"
-              checked={customColor}
-              onChange={(e) => setCustomColor(e.target.checked)}
-            />
-            Cor personalizada
-          </label>
+        <div className="flex flex-col gap-3 rounded-md border border-line-subtle bg-surface-1 p-3.5">
+          <Switch
+            label="Cor personalizada"
+            description="Por padrão, a cor vem do tipo do passo."
+            checked={customColor}
+            onChange={setCustomColor}
+          />
           {customColor && (
-            <input
-              type="color"
-              className="h-12 w-16 rounded-lg border border-neutral-700 bg-neutral-900"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              aria-label="Cor"
-            />
+            <label className="flex items-center justify-between gap-3">
+              <span className="p-label">Cor</span>
+              <input
+                type="color"
+                className="h-11 w-16 cursor-pointer rounded-sm border border-line bg-sunken p-1"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                aria-label="Cor"
+              />
+            </label>
           )}
         </div>
 
-        {error && <p className="rounded-xl bg-red-950 p-3 text-lg text-red-300">{error}</p>}
+        {error && (
+          <p className="rounded-md border border-[rgba(255,61,90,.4)] bg-[var(--wash-danger)] px-3.5 py-3 text-[14px] text-danger">
+            {error}
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <button className={btnSecondary} onClick={onClose}>Cancelar</button>

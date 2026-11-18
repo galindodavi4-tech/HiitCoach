@@ -3,9 +3,13 @@ import type { Category, HistoryEntry } from '../types';
 import { deleteHistoryEntry, loadHistory } from '../lib/storage';
 import { CATEGORIES, CATEGORY_LABEL } from '../lib/labels';
 import { formatClock } from '../lib/session';
+import { effortColor } from '../lib/effort';
 import BottomSheet from '../components/BottomSheet';
 import ConfirmDialog from '../components/ConfirmDialog';
-import { btnSecondary } from '../components/ui';
+import Badge from '../components/pulso/Badge';
+import Eyebrow from '../components/pulso/Eyebrow';
+import Title from '../components/pulso/Title';
+import { btnDanger, btnSecondary } from '../components/ui';
 
 // Monday 00:00 of the current week, local time
 function startOfWeek(): Date {
@@ -15,11 +19,14 @@ function startOfWeek(): Date {
   return d;
 }
 
+// "QUA · 18 NOV · 07:30"
 function formatDate(iso: string): string {
   const d = new Date(iso);
-  const day = d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' });
+  const weekday = d.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '');
+  const day = d.getDate();
+  const month = d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
   const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-  return `${day} · ${time}`;
+  return `${weekday} · ${day} ${month} · ${time}`.toUpperCase();
 }
 
 export default function HistoryPage() {
@@ -29,9 +36,8 @@ export default function HistoryPage() {
   const [toDelete, setToDelete] = useState<HistoryEntry | null>(null);
 
   const weekStart = startOfWeek().toISOString();
-  const weekMinutes = Math.round(
-    entries.filter((e) => e.date >= weekStart).reduce((sum, e) => sum + e.totalSeconds, 0) / 60,
-  );
+  const thisWeek = entries.filter((e) => e.date >= weekStart);
+  const weekMinutes = Math.round(thisWeek.reduce((sum, e) => sum + e.totalSeconds, 0) / 60);
   const shown = filter === 'all' ? entries : entries.filter((e) => e.category === filter);
 
   function confirmDelete() {
@@ -43,79 +49,87 @@ export default function HistoryPage() {
   }
 
   const chip = (active: boolean) =>
-    `min-h-12 shrink-0 rounded-full px-4 text-base font-semibold ${
-      active ? 'bg-green-600 text-white' : 'bg-neutral-800 text-neutral-300'
+    `min-h-11 shrink-0 rounded-sm px-4 font-mono text-[11px] font-medium tracking-[0.1em] uppercase transition-colors duration-[140ms] ${
+      active
+        ? 'bg-surface-3 text-primary shadow-[inset_0_0_0_1px_var(--border-strong)]'
+        : 'border border-line-subtle bg-sunken text-muted'
     }`;
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold">Histórico</h1>
+    <section className="flex flex-col gap-8">
+      <Title>Histórico</Title>
 
-      <div className="rounded-2xl bg-neutral-900 p-4">
-        <p className="text-lg text-neutral-400">Treino nesta semana</p>
-        <p className="text-4xl font-black tabular-nums">
-          {weekMinutes} <span className="text-2xl font-bold">min</span>
-        </p>
+      <div className="p-dot-grid flex items-end justify-between gap-4 rounded-lg border border-line-subtle bg-sunken p-[18px]">
+        <div className="flex flex-col gap-2">
+          <span className="p-label">Treino nesta semana</span>
+          <span className="flex items-baseline gap-1.5">
+            <span className="p-num text-[48px] text-accent" style={{ textShadow: '0 0 24px rgba(204,255,0,.35)' }}>
+              {weekMinutes}
+            </span>
+            <span className="p-unit">min</span>
+          </span>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <span className="p-label">Sessões</span>
+          <span className="p-num text-[22px]">{thisWeek.length}</span>
+        </div>
       </div>
 
-      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1">
-        <button className={chip(filter === 'all')} onClick={() => setFilter('all')}>Todas</button>
-        {CATEGORIES.map((c) => (
-          <button key={c} className={chip(filter === c)} onClick={() => setFilter(c)}>
-            {CATEGORY_LABEL[c]}
+      <div className="flex flex-col gap-3">
+        <Eyebrow trailing={shown.length}>Registros</Eyebrow>
+        <div className="-mx-[var(--gutter)] flex gap-2 overflow-x-auto px-[var(--gutter)] pb-1">
+          <button className={chip(filter === 'all')} onClick={() => setFilter('all')}>Todas</button>
+          {CATEGORIES.map((c) => (
+            <button key={c} className={chip(filter === c)} onClick={() => setFilter(c)}>
+              {CATEGORY_LABEL[c]}
+            </button>
+          ))}
+        </div>
+
+        {shown.length === 0 && (
+          <p className="rounded-md border border-dashed border-line-strong p-6 text-center text-[14px] text-muted">
+            {entries.length === 0 ? 'Os treinos que você fizer vão aparecer aqui.' : 'Nenhum treino nesta categoria.'}
+          </p>
+        )}
+
+        {shown.map((e) => (
+          <button
+            key={e.id}
+            className="p-card flex flex-col gap-2.5 p-4 text-left transition-[background,transform] duration-[140ms] hover:bg-surface-2 active:scale-[0.98]"
+            onClick={() => setSelected(e)}
+          >
+            <span className="p-label">{formatDate(e.date)}</span>
+            <h2 className="truncate text-[16px] font-semibold">{e.sessionName}</h2>
+            <span className="flex items-center gap-2">
+              <Badge>{CATEGORY_LABEL[e.category]}</Badge>
+              {e.rpe !== undefined && <Badge color={effortColor(e.rpe)}>Esforço {e.rpe}</Badge>}
+              <span className="p-num ml-auto text-[18px]">{formatClock(e.totalSeconds)}</span>
+            </span>
           </button>
         ))}
       </div>
 
-      {shown.length === 0 && (
-        <p className="text-lg text-neutral-400">
-          {entries.length === 0 ? 'Os treinos que você fizer vão aparecer aqui.' : 'Nenhum treino nesta categoria.'}
-        </p>
-      )}
-
-      {shown.map((e) => (
-        <button key={e.id} className="rounded-2xl bg-neutral-900 p-4 text-left active:scale-[0.98]" onClick={() => setSelected(e)}>
-          <p className="text-base text-neutral-400">{formatDate(e.date)}</p>
-          <h2 className="truncate text-2xl font-bold">{e.sessionName}</h2>
-          <div className="mt-1 flex items-center justify-between gap-2 text-lg text-neutral-400">
-            <span className="rounded-full bg-neutral-800 px-3 py-0.5 text-base">{CATEGORY_LABEL[e.category]}</span>
-            {e.rpe !== undefined && <span>Esforço {e.rpe}</span>}
-            <span className="font-bold text-neutral-100 tabular-nums">{formatClock(e.totalSeconds)}</span>
-          </div>
-        </button>
-      ))}
-
       {selected && (
         <BottomSheet title={selected.sessionName} onClose={() => setSelected(null)}>
-          <dl className="mb-5 grid grid-cols-2 gap-3 text-lg">
-            <div className="col-span-2">
-              <dt className="text-neutral-400">Data</dt>
-              <dd className="font-bold">{formatDate(selected.date)}</dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Categoria</dt>
-              <dd className="font-bold">{CATEGORY_LABEL[selected.category]}</dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Tempo total</dt>
-              <dd className="font-bold tabular-nums">{formatClock(selected.totalSeconds)}</dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Passos feitos</dt>
-              <dd className="font-bold tabular-nums">{selected.stepsCompleted} / {selected.stepsTotal}</dd>
-            </div>
-            <div>
-              <dt className="text-neutral-400">Esforço</dt>
-              <dd className="font-bold">{selected.rpe !== undefined ? `${selected.rpe} de 10` : '—'}</dd>
-            </div>
-            <div className="col-span-2">
-              <dt className="text-neutral-400">Observações</dt>
-              <dd className="whitespace-pre-wrap">{selected.notes || '—'}</dd>
-            </div>
-          </dl>
+          <span className="p-label mb-4 block">{formatDate(selected.date)}</span>
+          <div className="mb-5 grid grid-cols-2 gap-3">
+            <Stat label="Tempo total" value={formatClock(selected.totalSeconds)} />
+            <Stat label="Passos feitos" value={`${selected.stepsCompleted}/${selected.stepsTotal}`} />
+            <Stat
+              label="Esforço"
+              value={selected.rpe !== undefined ? String(selected.rpe) : '—'}
+              unit={selected.rpe !== undefined ? 'de 10' : undefined}
+              color={selected.rpe !== undefined ? effortColor(selected.rpe) : undefined}
+            />
+            <Stat label="Categoria" value={CATEGORY_LABEL[selected.category]} small />
+          </div>
+          <div className="mb-6 flex flex-col gap-2">
+            <span className="p-label">Observações</span>
+            <p className="text-[15px] whitespace-pre-wrap text-secondary">{selected.notes || '—'}</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <button className={btnSecondary} onClick={() => setSelected(null)}>Fechar</button>
-            <button className={`${btnSecondary} text-red-400`} onClick={() => setToDelete(selected)}>Excluir</button>
+            <button className={btnDanger} onClick={() => setToDelete(selected)}>Excluir</button>
           </div>
         </BottomSheet>
       )}
@@ -129,5 +143,17 @@ export default function HistoryPage() {
         />
       )}
     </section>
+  );
+}
+
+function Stat({ label, value, unit, color, small }: { label: string; value: string; unit?: string; color?: string; small?: boolean }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-line-subtle bg-surface-1 p-3.5">
+      <span className="font-mono text-[10px] tracking-[0.12em] text-muted uppercase">{label}</span>
+      <span className="flex items-baseline gap-1.5">
+        <span className={`p-num truncate ${small ? 'text-[15px]' : 'text-[22px]'}`} style={{ color }}>{value}</span>
+        {unit && <span className="p-unit">{unit}</span>}
+      </span>
+    </div>
   );
 }

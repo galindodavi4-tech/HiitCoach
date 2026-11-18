@@ -7,11 +7,12 @@ export const KIND_LABEL: Record<StepKind, string> = {
   cooldown: 'Desaquecimento',
 };
 
+// PULSO energy colours: volt = ready, plasma = effort, ion = recovery, zone 1 = cool down
 export const KIND_COLOR: Record<StepKind, string> = {
-  prep: '#CA8A04',
-  work: '#16A34A',
-  rest: '#2563EB',
-  cooldown: '#9333EA',
+  prep: '#CCFF00',
+  work: '#FF4A1F',
+  rest: '#1FE2FF',
+  cooldown: '#6E8BFF',
 };
 
 export const MODE_LABEL: Record<StepMode, string> = {
@@ -20,10 +21,10 @@ export const MODE_LABEL: Record<StepMode, string> = {
   manual: 'Manual',
 };
 
-export const CATEGORIES: Category[] = ['JogaBR', 'FQB', 'Cardio', 'Custom'];
+export const CATEGORIES: Category[] = ['HIITCoach', 'FQB', 'Cardio', 'Custom'];
 
 export const CATEGORY_LABEL: Record<Category, string> = {
-  JogaBR: 'JogaBR',
+  HIITCoach: 'HIITCoach',
   FQB: 'FQB',
   Cardio: 'Cardio',
   Custom: 'Personalizado',
@@ -40,5 +41,5 @@ export function textOn(hex: string): string {
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
-  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#000' : '#fff';
+  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#0A0D00' : '#F5F7F9';
 }

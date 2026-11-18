@@ -26,7 +26,7 @@ export default function BlockSheet({ block, isNew, onSave, onDelete, onClose }: 
 
   return (
     <BottomSheet title={isNew ? 'Novo bloco' : 'Editar bloco'} onClose={onClose}>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         <div>
           <label className={labelClass} htmlFor="block-name">Nome</label>
           <input id="block-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
@@ -34,10 +34,14 @@ export default function BlockSheet({ block, isNew, onSave, onDelete, onClose }: 
 
         <div>
           <span className={labelClass}>Repetir quantas vezes</span>
-          <Stepper value={repeat} onChange={setRepeat} />
+          <Stepper value={repeat} unit="×" onChange={setRepeat} />
         </div>
 
-        {error && <p className="rounded-xl bg-red-950 p-3 text-lg text-red-300">{error}</p>}
+        {error && (
+          <p className="rounded-md border border-[rgba(255,61,90,.4)] bg-[var(--wash-danger)] px-3.5 py-3 text-[14px] text-danger">
+            {error}
+          </p>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <button className={btnSecondary} onClick={onClose}>Cancelar</button>

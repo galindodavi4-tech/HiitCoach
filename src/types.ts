@@ -1,6 +1,6 @@
 export type StepKind = 'prep' | 'work' | 'rest' | 'cooldown';
 export type StepMode = 'time' | 'reps' | 'manual';
-export type Category = 'JogaBR' | 'FQB' | 'Cardio' | 'Custom';
+export type Category = 'HIITCoach' | 'FQB' | 'Cardio' | 'Custom';
 
 export interface Step {
   type: 'step';

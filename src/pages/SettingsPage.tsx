@@ -3,6 +3,10 @@ import { loadSettings, saveSettings } from '../lib/storage';
 import type { Settings } from '../lib/storage';
 import { speak, startBeep, unlockAudio, vibrate } from '../lib/cues';
 import { wakeLockSupported } from '../lib/wakeLock';
+import { AlertTriangle, Volume2 } from 'lucide-react';
+import Eyebrow from '../components/pulso/Eyebrow';
+import Switch from '../components/pulso/Switch';
+import Title from '../components/pulso/Title';
 import { btnSecondary } from '../components/ui';
 
 type Toggle = 'beeps' | 'voice' | 'vibration';
@@ -26,55 +30,66 @@ export default function SettingsPage() {
     unlockAudio();
     startBeep('work', settings);
     vibrate(200, settings);
-    speak('Teste de voz. Bora treinar!', settings);
+    speak('Teste de voz. Bora treinar.', settings);
   }
 
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-3xl font-bold">Ajustes</h1>
+    <section className="flex flex-col gap-8">
+      <Title>Ajustes</Title>
 
-      {TOGGLES.map((t) => (
-        <label key={t.key} className="flex min-h-16 items-center gap-4 rounded-2xl bg-neutral-900 px-4 py-3">
-          <span className="flex-1">
-            <span className="block text-xl font-bold">{t.label}</span>
-            <span className="block text-sm text-neutral-400">{t.hint}</span>
-          </span>
-          <input
-            type="checkbox"
-            className="peer sr-only"
-            checked={settings[t.key]}
-            onChange={(e) => update({ [t.key]: e.target.checked })}
-          />
-          <span
-            aria-hidden="true"
-            className="relative h-8 w-14 shrink-0 rounded-full bg-neutral-700 transition peer-checked:bg-green-600 after:absolute after:top-1 after:left-1 after:h-6 after:w-6 after:rounded-full after:bg-white after:transition peer-checked:after:translate-x-6"
-          />
-        </label>
-      ))}
-
-      <div className="rounded-2xl bg-neutral-900 px-4 py-3">
-        <label htmlFor="volume" className="mb-2 flex items-center justify-between text-xl font-bold">
-          Volume
-          <span className="tabular-nums text-neutral-300">{Math.round(settings.volume * 100)}%</span>
-        </label>
-        <input
-          id="volume"
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          className="h-12 w-full accent-green-600"
-          value={Math.round(settings.volume * 100)}
-          onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
-        />
+      <div className="flex flex-col gap-3">
+        <Eyebrow>Sinais durante o treino</Eyebrow>
+        <div className="p-card flex flex-col divide-y divide-line-subtle px-4">
+          {TOGGLES.map((t) => (
+            <div key={t.key} className="py-3.5">
+              <Switch
+                label={t.label}
+                description={t.hint}
+                checked={settings[t.key]}
+                onChange={(checked) => update({ [t.key]: checked })}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
-      <button className={`${btnSecondary} min-h-14`} onClick={test}>🔊 Testar som</button>
+      <div className="flex flex-col gap-3">
+        <Eyebrow>Áudio</Eyebrow>
+        <div className="p-card flex flex-col gap-2 px-4 pt-4 pb-2">
+          <label htmlFor="volume" className="flex items-baseline justify-between">
+            <span className="text-[15px] font-medium">Volume</span>
+            <span className="flex items-baseline gap-1">
+              <span className="p-num text-[22px]">{Math.round(settings.volume * 100)}</span>
+              <span className="p-unit">%</span>
+            </span>
+          </label>
+          <input
+            id="volume"
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            className="p-range"
+            value={Math.round(settings.volume * 100)}
+            onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
+          />
+        </div>
+
+        <button className={btnSecondary} onClick={test}>
+          <Volume2 size={17} strokeWidth={2} /> Testar som
+        </button>
+      </div>
 
       {!wakeLockSupported() && (
-        <p className="rounded-xl bg-amber-950 p-3 text-amber-300">
-          Este navegador não consegue manter a tela ligada sozinho. Use o Chrome e abra o app pelo endereço https.
-        </p>
+        <div className="flex gap-3 rounded-md border border-[rgba(255,176,31,.4)] bg-[var(--wash-warning)] p-3.5">
+          <AlertTriangle size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-warning" />
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-[10.5px] tracking-[0.12em] text-warning uppercase">Tela</span>
+            <p className="text-[14px] text-secondary">
+              Este navegador não consegue manter a tela ligada sozinho. Use o Chrome e abra o app pelo endereço https.
+            </p>
+          </div>
+        </div>
       )}
     </section>
   );

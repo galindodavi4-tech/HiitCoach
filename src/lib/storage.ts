@@ -1,6 +1,41 @@
-import type { HistoryEntry, Session } from '../types';
+import type { Category, HistoryEntry, Session } from '../types';
 
-const SESSIONS_KEY = 'jogabr.sessions';
+const SESSIONS_KEY = 'hiitcoach.sessions';
+const SETTINGS_KEY = 'hiitcoach.settings';
+const HISTORY_KEY = 'hiitcoach.history';
+
+// The app used to be called JogaBR. Move data saved under the old keys and
+// category name so nothing is lost after the rename. Runs once per device.
+const LEGACY_KEYS: [string, string][] = [
+  ['jogabr.sessions', SESSIONS_KEY],
+  ['jogabr.settings', SETTINGS_KEY],
+  ['jogabr.history', HISTORY_KEY],
+];
+
+function renameCategory(category: string): Category {
+  return (category === 'JogaBR' ? 'HIITCoach' : category) as Category;
+}
+
+function migrateLegacyData(): void {
+  try {
+    for (const [oldKey, newKey] of LEGACY_KEYS) {
+      const raw = localStorage.getItem(oldKey);
+      if (raw === null) continue;
+      if (localStorage.getItem(newKey) === null) {
+        const data = JSON.parse(raw);
+        const migrated = Array.isArray(data)
+          ? data.map((item) => ({ ...item, category: renameCategory(item.category) }))
+          : data;
+        localStorage.setItem(newKey, JSON.stringify(migrated));
+      }
+      localStorage.removeItem(oldKey);
+    }
+  } catch {
+    // Storage unavailable or corrupt: start fresh under the new keys
+  }
+}
+
+migrateLegacyData();
 
 function read<T>(key: string, fallback: T): T {
   try {
@@ -44,8 +79,6 @@ export interface Settings {
   volume: number; // 0-1
 }
 
-const SETTINGS_KEY = 'jogabr.settings';
-
 const DEFAULT_SETTINGS: Settings = { beeps: true, voice: true, vibration: true, volume: 0.8 };
 
 export function loadSettings(): Settings {
@@ -55,8 +88,6 @@ export function loadSettings(): Settings {
 export function saveSettings(settings: Settings): void {
   write(SETTINGS_KEY, settings);
 }
-
-const HISTORY_KEY = 'jogabr.history';
 
 // Newest first
 export function loadHistory(): HistoryEntry[] {

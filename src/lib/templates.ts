@@ -40,7 +40,7 @@ export const TEMPLATES: Session[] = [
     ],
   }),
 
-  template('jogabr-academia', 'JogaBR - Bloco de academia', 'JogaBR', {
+  template('hiitcoach-academia', 'HIITCoach - Bloco de academia', 'HIITCoach', {
     type: 'block', id: 'root', name: 'Sessão', repeat: 1,
     items: [
       { type: 'step', id: 'aq', name: 'Aquecimento', kind: 'prep', mode: 'time', seconds: 300 },
