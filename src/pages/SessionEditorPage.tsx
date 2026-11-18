@@ -17,7 +17,7 @@ import ChoiceGroup from '../components/ChoiceGroup';
 import ItemList from '../components/ItemList';
 import StepSheet from '../components/StepSheet';
 import Stepper from '../components/Stepper';
-import { btnSecondary, inputClass, labelClass } from '../components/ui';
+import { btnPrimary, btnSecondary, inputClass, labelClass } from '../components/ui';
 
 // parentId is set only for a new item that has not been added yet
 type StepEdit = { step: Step; parentId: string | null };
@@ -76,6 +76,13 @@ export default function SessionEditorPage() {
           Total <strong className="text-2xl text-neutral-100 tabular-nums">{formatClock(blockSeconds(root))}</strong>
         </span>
       </div>
+
+      <Link
+        to={`/rodar/${session.id}`}
+        className={`${btnPrimary} flex min-h-14 items-center justify-center text-xl`}
+      >
+        ▶ Iniciar
+      </Link>
 
       <div>
         <label className={labelClass} htmlFor="session-name">Nome da sessão</label>

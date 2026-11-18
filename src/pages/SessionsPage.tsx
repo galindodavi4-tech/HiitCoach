@@ -55,6 +55,12 @@ export default function SessionsPage() {
               <span className="font-bold text-neutral-100 tabular-nums">{formatClock(blockSeconds(s.root))}</span>
             </div>
           </Link>
+          <Link
+            to={`/rodar/${s.id}`}
+            className={`${btnPrimary} mb-2 flex min-h-14 items-center justify-center text-xl`}
+          >
+            ▶ Iniciar
+          </Link>
           <div className="grid grid-cols-3 gap-2">
             <Link to={`/sessoes/${s.id}`} className={`${btnSecondary} flex items-center justify-center`}>
               Abrir
