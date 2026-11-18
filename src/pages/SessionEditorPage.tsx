@@ -12,6 +12,7 @@ import {
   removeItem,
   replaceItem,
 } from '../lib/session';
+import { unlockAudio } from '../lib/cues';
 import BlockSheet from '../components/BlockSheet';
 import ChoiceGroup from '../components/ChoiceGroup';
 import ItemList from '../components/ItemList';
@@ -79,6 +80,7 @@ export default function SessionEditorPage() {
 
       <Link
         to={`/rodar/${session.id}`}
+        onClick={unlockAudio}
         className={`${btnPrimary} flex min-h-14 items-center justify-center text-xl`}
       >
         ▶ Iniciar

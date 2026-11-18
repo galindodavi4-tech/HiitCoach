@@ -36,3 +36,22 @@ export function saveSession(session: Session): void {
 export function deleteSession(id: string): void {
   write(SESSIONS_KEY, loadSessions().filter((s) => s.id !== id));
 }
+
+export interface Settings {
+  beeps: boolean;
+  voice: boolean;
+  vibration: boolean;
+  volume: number; // 0-1
+}
+
+const SETTINGS_KEY = 'jogabr.settings';
+
+const DEFAULT_SETTINGS: Settings = { beeps: true, voice: true, vibration: true, volume: 0.8 };
+
+export function loadSettings(): Settings {
+  return { ...DEFAULT_SETTINGS, ...read<Partial<Settings>>(SETTINGS_KEY, {}) };
+}
+
+export function saveSettings(settings: Settings): void {
+  write(SETTINGS_KEY, settings);
+}

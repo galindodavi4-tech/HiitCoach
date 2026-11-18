@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getSession } from '../lib/storage';
+import { getSession, loadSettings } from '../lib/storage';
+import {
+  audioReady,
+  countdownBeep,
+  finishBeeps,
+  speak,
+  startBeep,
+  stopSpeech,
+  unlockAudio,
+  vibrate,
+} from '../lib/cues';
+import { allowScreenOff, keepScreenOn } from '../lib/wakeLock';
 import { flatten } from '../lib/flatten';
 import type { RunStep } from '../lib/flatten';
 import { createTimer } from '../lib/timer';
@@ -33,14 +44,41 @@ export default function RunPage() {
 
   useEffect(() => {
     if (steps.length === 0) return;
+    const settings = loadSettings();
+    let lastBeep = '';
+
     const timer = createTimer(steps, {
-      onTick: setState,
-      onStepStart: () => {},
-      onFinish: () => {},
+      onTick: (s) => {
+        setState(s);
+        if (!s.step || s.paused || s.remainingMs === null) return;
+        // Short beep at 3, 2 and 1 s before a timed step ends, once each
+        const sec = Math.ceil(s.remainingMs / 1000);
+        const key = `${s.index}:${sec}`;
+        if (sec >= 1 && sec <= 3 && sec < (s.step.seconds ?? 0) && key !== lastBeep) {
+          lastBeep = key;
+          countdownBeep(s.step.kind, settings);
+        }
+      },
+      onStepStart: (step) => {
+        startBeep(step.kind, settings);
+        vibrate(200, settings);
+        speak(step.voiceCue || step.name, settings);
+      },
+      onFinish: () => {
+        finishBeeps(settings);
+        vibrate([200, 100, 200, 100, 400], settings);
+        speak('Treino concluído', settings);
+        allowScreenOff();
+      },
     });
     timerRef.current = timer;
+    keepScreenOn();
     timer.start();
-    return () => timer.stop();
+    return () => {
+      timer.stop();
+      allowScreenOff();
+      stopSpeech();
+    };
   }, [steps]);
 
   // Seconds elapsed before each step, for the whole-session progress bar
@@ -99,6 +137,10 @@ export default function RunPage() {
   return (
     <div
       className="flex h-full flex-col transition-colors duration-300"
+      // After a page reload there was no Start tap, so any tap here turns sound on
+      onPointerDown={() => {
+        if (!audioReady()) unlockAudio();
+      }}
       style={{
         backgroundColor: bg,
         color: fg,

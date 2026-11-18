@@ -4,6 +4,7 @@ import type { Session } from '../types';
 import { deleteSession, loadSessions, saveSession } from '../lib/storage';
 import { CATEGORY_LABEL } from '../lib/labels';
 import { blockSeconds, createSession, duplicateSession, formatClock } from '../lib/session';
+import { unlockAudio } from '../lib/cues';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { btnPrimary, btnSecondary } from '../components/ui';
 
@@ -57,6 +58,7 @@ export default function SessionsPage() {
           </Link>
           <Link
             to={`/rodar/${s.id}`}
+            onClick={unlockAudio}
             className={`${btnPrimary} mb-2 flex min-h-14 items-center justify-center text-xl`}
           >
             ▶ Iniciar
