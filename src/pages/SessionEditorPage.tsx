@@ -16,13 +16,14 @@ import { unlockAudio } from '../lib/cues';
 import { flatten } from '../lib/flatten';
 import BlockSheet from '../components/BlockSheet';
 import ChoiceGroup from '../components/ChoiceGroup';
+import ExerciseNamesSheet from '../components/ExerciseNamesSheet';
 import ItemList from '../components/ItemList';
 import StepSheet from '../components/StepSheet';
 import Stepper from '../components/Stepper';
 import SectionHeading from '../components/jb/SectionHeading';
 import StatPair from '../components/jb/StatPair';
-import { btnPrimary, btnSecondary, inputClass, labelClass } from '../components/ui';
-import { Play, Plus } from 'lucide-react';
+import { btnOutline, btnPrimary, btnSecondary, inputClass, labelClass } from '../components/ui';
+import { PencilLine, Play, Plus } from 'lucide-react';
 
 // parentId is set only for a new item that has not been added yet
 type StepEdit = { step: Step; parentId: string | null };
@@ -33,6 +34,7 @@ export default function SessionEditorPage() {
   const [session, setSession] = useState<Session | undefined>(() => (id ? getSession(id) : undefined));
   const [stepEdit, setStepEdit] = useState<StepEdit | null>(null);
   const [blockEdit, setBlockEdit] = useState<BlockEdit | null>(null);
+  const [editNames, setEditNames] = useState(false);
 
   if (!session) {
     return (
@@ -126,6 +128,9 @@ export default function SessionEditorPage() {
 
       <div className="flex flex-col gap-[var(--stack-gap)]">
         <SectionHeading trailing={`${root.items.length} itens`}>Passos</SectionHeading>
+        <button className={btnOutline} onClick={() => setEditNames(true)}>
+          <PencilLine size={18} strokeWidth={2.4} /> Nomes dos exercícios
+        </button>
         <p className="text-[15px] text-secondary">
           Toque num cartão para editar. Segure e arraste para mudar a ordem ou para colocar dentro ou fora de um bloco.
         </p>
@@ -154,6 +159,16 @@ export default function SessionEditorPage() {
         </div>
       </div>
 
+      {editNames && (
+        <ExerciseNamesSheet
+          root={root}
+          onSave={(next) => {
+            setRoot(next);
+            setEditNames(false);
+          }}
+          onClose={() => setEditNames(false)}
+        />
+      )}
       {stepEdit && (
         <StepSheet
           step={stepEdit.step}

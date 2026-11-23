@@ -3,6 +3,7 @@ import { Check } from 'lucide-react';
 import type { Session } from '../types';
 import { saveHistoryEntry } from '../lib/storage';
 import { formatClock, newId } from '../lib/session';
+import ConfirmDialog from './ConfirmDialog';
 import StatPair from './jb/StatPair';
 import { btnGhost, btnPrimary, inputClass, labelClass } from './ui';
 
@@ -20,6 +21,7 @@ const RPE_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export default function SummaryScreen({ session, finished, totalSeconds, stepsCompleted, stepsTotal, onDone }: Props) {
   const [rpe, setRpe] = useState<number | undefined>();
   const [notes, setNotes] = useState('');
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   function save() {
     saveHistoryEntry({
@@ -113,10 +115,23 @@ export default function SummaryScreen({ session, finished, totalSeconds, stepsCo
             <button className={`${btnPrimary} jb-btn-lg w-full`} onClick={save}>
               <Check size={22} strokeWidth={3} /> Salvar no histórico
             </button>
-            <button className={`${btnGhost} w-full`} onClick={onDone}>Não salvar ›</button>
+            {/* Asks first, so a stray tap does not throw the workout away */}
+            <button type="button" className={`${btnGhost} w-full`} onClick={() => setConfirmDiscard(true)}>
+              Não salvar ›
+            </button>
           </div>
         </div>
       </div>
+
+      {confirmDiscard && (
+        <ConfirmDialog
+          title="Tem certeza?"
+          message="Este treino não vai para o histórico."
+          confirmLabel="Não salvar"
+          onConfirm={onDone}
+          onCancel={() => setConfirmDiscard(false)}
+        />
+      )}
     </div>
   );
 }

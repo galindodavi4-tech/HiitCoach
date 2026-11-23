@@ -33,16 +33,18 @@ function biSet(id: string, name: string, rounds: number, a: Step, b: Step, restS
   };
 }
 
-// Manual break to lay out the cones for the next drill: waits for Concluído
-function setup(id: string, next: string): Step {
+// Manual break to lay out the cones for the next drill: waits for Concluído.
+// The voice and the "Troca" bar name the next exercise.
+function setup(id: string): Step {
   return {
     type: 'step', id, name: 'Montar circuito', kind: 'prep', mode: 'manual',
-    notes: `Prepare os cones para: ${next}. Toque em Concluído quando estiver pronto.`,
+    notes: 'Prepare os cones para o próximo exercício. Toque em Concluído quando estiver pronto.',
     voiceCue: 'Montar circuito',
   };
 }
 
-const PICK_NOTE = 'Escolha um exercício deste treino: toque no passo para trocar o nome.';
+const REST_5_20 = 'Descanso de 5 a 20 s';
+const PICK_NOTE = 'Escolha um exercício deste treino.';
 
 export const TEMPLATES: Session[] = [
   template('tabata-20-10', 'Tabata 20/10', 'Cardio', {
@@ -102,75 +104,60 @@ export const TEMPLATES: Session[] = [
       { type: 'step', id: 'desaq', name: 'Desaquecimento', kind: 'cooldown', mode: 'time', seconds: 300 },
     ],
   }),
-  // FQB technical session (30 min): Preparação, Ativação pré-guerra, Guerra and Missão pós-guerra.
-  // Rest ranges are set to a value inside the range (5–20 s → 10 s). A manual 'Montar circuito'
-  // step before each drill gives time to lay out the cones; in Missão it also covers the 0–30 s rest.
-  // Delete the ones you do not need in the editor.
-  template('fqb-tecnico-sola-conducao', 'FQB - Treino técnico: Sola + Condução', 'FQB', {
+  // FQB technical session (30 min) as a ready structure: Preparação, Ativação pré-guerra, Guerra
+  // and Missão pós-guerra. Exercise names are placeholders; fill them in with "Nomes dos exercícios"
+  // in the editor. Rest ranges use a value inside the range (5–20 s → 10 s). A manual
+  // 'Montar circuito' step before each drill gives time to lay out the cones.
+  template('fqb-tecnico', 'FQB - Treino técnico (30 min)', 'FQB', {
     type: 'block', id: 'root', name: 'Sessão', repeat: 1,
     items: [
       {
         type: 'block', id: 'prep', name: 'Preparação', repeat: 1,
         items: [
-          { type: 'step', id: 'prep-aq', name: 'Aquecimento Livre', kind: 'prep', mode: 'time', seconds: 40, notes: 'Rápida' },
-          setup('prep-esc-setup', 'Escadinha Bote Lateral'),
+          { type: 'step', id: 'prep-aq', name: 'Aquecimento livre', kind: 'prep', mode: 'time', seconds: 40, notes: 'Rápida' },
+          setup('prep-1-setup'),
           {
-            type: 'block', id: 'prep-esc', name: 'Escadinha', repeat: 3,
-            items: [timed('prep-esc-ex', 'Escadinha Bote Lateral', 10, 'Rápida · sem descanso')],
+            type: 'block', id: 'prep-1', name: 'Preparação 1', repeat: 3,
+            items: [timed('prep-1-ex', 'Preparação 1', 10, 'Rápida · sem descanso')],
           },
         ],
       },
       {
         type: 'block', id: 'ativ', name: 'Ativação pré-guerra', repeat: 1,
         items: [
-          setup('ativ-1-setup', 'Ball Mastery Sola + Embaixadinha Curta'),
-          biSet('ativ-1', 'Ativação · Bi-set 1', 2,
-            timed('ativ-1a', 'Ball Mastery Sola', 15),
-            timed('ativ-1b', 'Embaixadinha Curta', 35),
-            10, 'Descanso de 5 a 20 s'),
-          setup('ativ-2-setup', 'Ball Mastery Vai e Volta + Embaixadinha com a Cabeça'),
-          biSet('ativ-2', 'Ativação · Bi-set 2', 2,
-            timed('ativ-2a', 'Ball Mastery Vai e Volta', 15),
-            timed('ativ-2b', 'Embaixadinha com a Cabeça', 35),
-            10, 'Descanso de 5 a 20 s'),
+          setup('ativ-1-setup'),
+          biSet('ativ-1', 'Ativação · Bi-set 1', 2, timed('ativ-1a', 'Ativação 1A', 15), timed('ativ-1b', 'Ativação 1B', 35), 10, REST_5_20),
+          setup('ativ-2-setup'),
+          biSet('ativ-2', 'Ativação · Bi-set 2', 2, timed('ativ-2a', 'Ativação 2A', 15), timed('ativ-2b', 'Ativação 2B', 35), 10, REST_5_20),
         ],
       },
       {
         type: 'block', id: 'guerra', name: 'Guerra', repeat: 1,
         items: [
-          setup('guerra-1-setup', 'Rabisco Longo Externo + Passe de Primeira na Parede'),
-          biSet('guerra-1', 'Guerra · Bi-set 1', 5,
-            timed('guerra-1a', 'Rabisco Longo Externo', 15),
-            timed('guerra-1b', 'Passe de Primeira na Parede', 35),
-            10, 'Descanso de 5 a 20 s'),
-          setup('guerra-2-setup', 'Rabisco Longo Interno + Wall Turn'),
-          biSet('guerra-2', 'Guerra · Bi-set 2', 5,
-            timed('guerra-2a', 'Rabisco Longo Interno', 15),
-            timed('guerra-2b', 'Wall Turn', 35),
-            10, 'Descanso de 5 a 20 s'),
-          setup('guerra-3-setup', 'Condução + Turn 5m Variação 1 + Embaixadinha Curta Pé Não Dominante'),
-          biSet('guerra-3', 'Guerra · Bi-set 3', 5,
-            timed('guerra-3a', 'Condução + Turn 5m Variação 1', 15),
-            timed('guerra-3b', 'Embaixadinha Curta Pé Não Dominante', 35),
-            10, 'Descanso de 5 a 20 s'),
+          setup('guerra-1-setup'),
+          biSet('guerra-1', 'Guerra · Bi-set 1', 5, timed('guerra-1a', 'Guerra 1A', 15), timed('guerra-1b', 'Guerra 1B', 35), 10, REST_5_20),
+          setup('guerra-2-setup'),
+          biSet('guerra-2', 'Guerra · Bi-set 2', 5, timed('guerra-2a', 'Guerra 2A', 15), timed('guerra-2b', 'Guerra 2B', 35), 10, REST_5_20),
+          setup('guerra-3-setup'),
+          biSet('guerra-3', 'Guerra · Bi-set 3', 5, timed('guerra-3a', 'Guerra 3A', 15), timed('guerra-3b', 'Guerra 3B', 35), 10, REST_5_20),
         ],
       },
       {
         type: 'block', id: 'missao', name: 'Missão pós-guerra', repeat: 1,
         items: [
-          setup('missao-rab-setup', 'Rabisco Curto Interno'),
+          setup('missao-1-setup'),
           {
             // 30 reps with a 5 min limit: the clock runs the limit; skip ahead when done
-            type: 'step', id: 'missao-rab', name: 'Rabisco Curto Interno', kind: 'work', mode: 'reps', reps: 30, seconds: 300,
+            type: 'step', id: 'missao-1', name: 'Missão 1', kind: 'work', mode: 'reps', reps: 30, seconds: 300,
             notes: 'Sem errar · limite de 5 min. Terminou antes? Toque em pular.',
           },
-          setup('missao-ball-setup', 'Ball Mastery Sola'),
-          timed('missao-ball', 'Ball Mastery Sola', 30, 'Sempre em deslocamento'),
-          setup('missao-final-setup', 'seu exercício preferido + o de maior dificuldade'),
+          setup('missao-2-setup'),
+          timed('missao-2', 'Missão 2', 30, 'Sempre em deslocamento'),
+          setup('missao-final-setup'),
           biSet('missao-final', 'Até completar o tempo', 3,
             timed('missao-final-a', 'Seu exercício preferido', 20, PICK_NOTE),
             timed('missao-final-b', 'Seu exercício de maior dificuldade', 20, PICK_NOTE),
-            10, 'Descanso de 5 a 20 s'),
+            10, REST_5_20),
         ],
       },
     ],

@@ -92,8 +92,8 @@ export default function SessionsPage() {
       </div>
 
       <div className="flex flex-col gap-[var(--stack-gap)]">
-        <SectionHeading trailing={`${sessions.length} ${sessions.length === 1 ? 'sessão' : 'sessões'}`}>
-          Minhas sessões
+        <SectionHeading trailing={`${sessions.length} ${sessions.length === 1 ? 'treino' : 'treinos'}`}>
+          Meus treinos
         </SectionHeading>
 
         <div className="grid grid-cols-2 gap-3">
@@ -130,7 +130,7 @@ export default function SessionsPage() {
 
         {sessions.length === 0 && (
           <p className="rounded-lg border border-dashed border-line-strong p-6 text-center text-[16px] text-muted">
-            Você ainda não tem sessões. Crie uma ou comece por um modelo.
+            Você ainda não tem treinos salvos. Crie um ou comece por um modelo: ele fica guardado aqui.
           </p>
         )}
 

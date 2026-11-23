@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { Category, HistoryEntry } from '../types';
 import { deleteHistoryEntry, loadHistory } from '../lib/storage';
 import { CATEGORIES, CATEGORY_LABEL, CATEGORY_RAIL } from '../lib/labels';
@@ -8,15 +8,11 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import ScreenTitle from '../components/jb/ScreenTitle';
 import SectionHeading from '../components/jb/SectionHeading';
 import StatPair from '../components/jb/StatPair';
+import YearHeatmap from '../components/charts/YearHeatmap';
+import WeeklyBars from '../components/charts/WeeklyBars';
+import EffortLine from '../components/charts/EffortLine';
+import { dailyTotals, dayStreaks, startOfWeek, weeklyTotals } from '../lib/stats';
 import { btnDanger, btnSecondary } from '../components/ui';
-
-// Monday 00:00 of the current week, local time
-function startOfWeek(): Date {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-}
 
 // "Qua · 18/11/2026 · 07:30"
 function formatDate(iso: string): string {
@@ -33,7 +29,22 @@ export default function HistoryPage() {
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [toDelete, setToDelete] = useState<HistoryEntry | null>(null);
 
-  const weekStart = startOfWeek().toISOString();
+  const thisYear = new Date().getFullYear();
+  const [year, setYear] = useState(thisYear);
+
+  const days = useMemo(() => dailyTotals(entries), [entries]);
+  const streaks = useMemo(() => dayStreaks(days), [days]);
+  const weeks = useMemo(() => weeklyTotals(entries, 12), [entries]);
+  // Oldest → newest, only trainings with an effort score
+  const effort = useMemo(() => entries.filter((e) => e.rpe !== undefined).slice(0, 15).reverse(), [entries]);
+  const years = useMemo(() => {
+    const set = new Set(entries.map((e) => new Date(e.date).getFullYear()));
+    set.add(thisYear);
+    return [...set].sort((a, b) => b - a);
+  }, [entries, thisYear]);
+  const daysInYear = [...days.keys()].filter((k) => k.startsWith(`${year}-`)).length;
+
+  const weekStart = startOfWeek(new Date()).toISOString();
   const thisWeek = entries.filter((e) => e.date >= weekStart);
   const weekMinutes = Math.round(thisWeek.reduce((sum, e) => sum + e.totalSeconds, 0) / 60);
   const shown = filter === 'all' ? entries : entries.filter((e) => e.category === filter);
@@ -63,6 +74,51 @@ export default function HistoryPage() {
             <span className="text-[17px] font-semibold text-secondary">min</span>
           </span>
           <StatPair value={thisWeek.length} label={thisWeek.length === 1 ? 'sessão' : 'sessões'} align="right" />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-[var(--stack-gap)]">
+        <SectionHeading trailing={`${daysInYear} ${daysInYear === 1 ? 'dia' : 'dias'}`}>Seu ano</SectionHeading>
+        {years.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {years.map((y) => (
+              <button key={y} className={chip(y === year)} onClick={() => setYear(y)}>
+                {y}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="jb-card p-4">
+          <YearHeatmap year={year} days={days} />
+        </div>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="jb-card p-3.5">
+            <StatPair value={daysInYear} label="dias treinados" size={26} accent />
+          </div>
+          <div className="jb-card p-3.5">
+            <StatPair value={streaks.current} label="sequência atual" size={26} />
+          </div>
+          <div className="jb-card p-3.5">
+            <StatPair value={streaks.longest} label="maior sequência" size={26} />
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-[var(--stack-gap)]">
+        <SectionHeading>Rendimento</SectionHeading>
+        <div className="jb-card flex flex-col gap-1 p-4">
+          <span className="jb-eyebrow">Minutos por semana</span>
+          <WeeklyBars weeks={weeks} />
+        </div>
+        <div className="jb-card flex flex-col gap-1 p-4">
+          <span className="jb-eyebrow">Esforço por treino</span>
+          {effort.length > 0 ? (
+            <EffortLine entries={effort} />
+          ) : (
+            <p className="py-6 text-center text-[15px] text-muted">
+              Marque o esforço ao salvar um treino para ver a evolução aqui.
+            </p>
+          )}
         </div>
       </div>
 
