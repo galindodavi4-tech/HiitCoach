@@ -33,11 +33,12 @@ function biSet(id: string, name: string, rounds: number, a: Step, b: Step, restS
   };
 }
 
-// 30 s to lay out the cones for the next drill
+// Manual break to lay out the cones for the next drill: waits for Concluído
 function setup(id: string, next: string): Step {
   return {
-    type: 'step', id, name: 'Montar circuito', kind: 'prep', mode: 'time', seconds: 30,
-    notes: `Prepare os cones para: ${next}`, voiceCue: 'Monte o próximo circuito',
+    type: 'step', id, name: 'Montar circuito', kind: 'prep', mode: 'manual',
+    notes: `Prepare os cones para: ${next}. Toque em Concluído quando estiver pronto.`,
+    voiceCue: 'Montar circuito',
   };
 }
 
@@ -102,8 +103,9 @@ export const TEMPLATES: Session[] = [
     ],
   }),
   // FQB technical session (30 min): Preparação, Ativação pré-guerra, Guerra and Missão pós-guerra.
-  // Rest ranges are set to a value inside the range (5–20 s → 10 s). A 30 s 'Montar circuito'
+  // Rest ranges are set to a value inside the range (5–20 s → 10 s). A manual 'Montar circuito'
   // step before each drill gives time to lay out the cones; in Missão it also covers the 0–30 s rest.
+  // Delete the ones you do not need in the editor.
   template('fqb-tecnico-sola-conducao', 'FQB - Treino técnico: Sola + Condução', 'FQB', {
     type: 'block', id: 'root', name: 'Sessão', repeat: 1,
     items: [

@@ -13,6 +13,7 @@ import {
 } from '../lib/cues';
 import { allowScreenOff, keepScreenOn } from '../lib/wakeLock';
 import { flatten } from '../lib/flatten';
+import { stepCue, upcomingExercise } from '../lib/announce';
 import type { RunStep } from '../lib/flatten';
 import { createTimer } from '../lib/timer';
 import type { TimerState } from '../lib/timer';
@@ -81,10 +82,11 @@ export default function RunPage() {
           countdownBeep(s.step.kind, settings);
         }
       },
-      onStepStart: (step) => {
+      onStepStart: (step, index) => {
         startBeep(step.kind, settings);
         vibrate(200, settings);
-        speak(step.voiceCue || step.name, settings);
+        // Also names the next exercise when the athlete is about to switch drills
+        speak(stepCue(steps, index), settings);
       },
       onFinish: () => {
         setStopped({ finished: true, totalSeconds: elapsedSeconds(), stepsCompleted: steps.length });
@@ -159,6 +161,7 @@ export default function RunPage() {
   const fg = textOn(color);
   const pct = Math.min(1, Math.max(0, progress));
   const next = state.next;
+  const switching = upcomingExercise(steps, state.index) !== null;
 
   return (
     <div
@@ -258,8 +261,18 @@ export default function RunPage() {
           style={{ boxShadow: 'var(--elev-dock)', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
         >
           {next ? (
-            <div className="flex min-h-12 items-center gap-3 rounded-lg bg-fill px-4 py-2.5">
-              <span className="shrink-0 text-[12px] font-bold tracking-[0.08em] text-secondary uppercase">A seguir</span>
+            <div
+              className={`flex min-h-12 items-center gap-3 rounded-lg px-4 py-2.5 ${
+                switching ? 'border border-[var(--border-accent-soft)] bg-[var(--jb-crimson-wash)]' : 'bg-fill'
+              }`}
+            >
+              <span
+                className={`shrink-0 text-[12px] font-bold tracking-[0.08em] uppercase ${
+                  switching ? 'text-accent' : 'text-secondary'
+                }`}
+              >
+                {switching ? 'Troca' : 'A seguir'}
+              </span>
               <span className="w-px self-stretch bg-line-strong" />
               <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: stepColor(next) }} />
               <span className="min-w-0 flex-1 truncate text-[17px] font-bold">{next.name}</span>
