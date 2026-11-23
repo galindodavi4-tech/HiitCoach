@@ -112,8 +112,13 @@ let store: Store | null = null;
 export function getStore(): Store {
   if (store) return store;
   if (process.env.HIITAPP_MEMORY_STORE === '1') return (store = new MemoryStore());
-  const url = process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.KV_REST_API_TOKEN ?? process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Default names first; then any custom prefix chosen when connecting the database
+  // in Vercel (e.g. HIIT_KV_REST_API_URL)
+  const urlKey =
+    ['KV_REST_API_URL', 'UPSTASH_REDIS_REST_URL'].find((k) => process.env[k]) ??
+    Object.keys(process.env).find((k) => k.endsWith('_KV_REST_API_URL') || k.endsWith('_REDIS_REST_URL'));
+  const url = urlKey ? process.env[urlKey] : undefined;
+  const token = urlKey ? process.env[urlKey.replace(/URL$/, 'TOKEN')] : undefined;
   if (!url || !token) throw new StoreNotConfigured('Banco de dados não configurado');
   return (store = new RedisStore(new Redis({ url, token })));
 }
