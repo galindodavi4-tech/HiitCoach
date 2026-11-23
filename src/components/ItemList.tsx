@@ -13,7 +13,7 @@ import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } 
 import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 import type { Block, Step } from '../types';
-import { ChevronRight, Plus, Repeat } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { KIND_LABEL, stepColor } from '../lib/labels';
 import { blockSeconds, formatClock } from '../lib/session';
 
@@ -75,16 +75,13 @@ function hiddenRowIds(rows: Row[], activeId: string | null): Set<string> {
 }
 
 function StepDetail({ step }: { step: Step }) {
-  if (step.mode === 'manual') return <span className="p-label">Manual</span>;
+  if (step.mode === 'manual') return <span className="text-[15px] font-semibold text-muted">Manual</span>;
   const time = formatClock(step.seconds ?? 0);
-  if (step.mode === 'time') return <span className="p-num text-[16px]">{time}</span>;
+  if (step.mode === 'time') return <span className="jb-num text-[20px]">{time}</span>;
   return (
-    <span className="flex flex-col items-end gap-1">
-      <span className="flex items-baseline gap-1">
-        <span className="p-num text-[16px]">{step.reps ?? 0}</span>
-        <span className="p-unit">reps</span>
-      </span>
-      <span className="p-unit">~{time}</span>
+    <span className="flex flex-col items-end gap-0.5">
+      <span className="jb-num text-[20px]">{step.reps ?? 0}×</span>
+      <span className="text-[13px] text-muted">~{time}</span>
     </span>
   );
 }
@@ -216,24 +213,19 @@ function StepCard({ step, onClick }: { step: Step; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="flex min-h-16 w-full items-center gap-3 rounded-md border border-line-subtle bg-surface-1 px-3.5 py-3 text-left transition-colors duration-[140ms] hover:bg-surface-2"
+      className="jb-card flex min-h-16 w-full items-center gap-3.5 py-3.5 pr-3.5 pl-3 text-left transition-colors duration-[140ms] hover:bg-card-raised"
     >
-      {/* Kind swatch: index-square shape, filled with the step colour */}
-      <span
-        aria-hidden="true"
-        className="h-9 w-2 flex-none rounded-xs"
-        style={{ background: color, boxShadow: `0 0 10px color-mix(in oklab, ${color} 45%, transparent)` }}
-      />
-      <span className="flex min-w-0 flex-1 flex-col gap-1">
-        <span className="truncate text-[15px] font-semibold">{step.name}</span>
-        <span className="font-mono text-[11px] tracking-[0.08em] uppercase" style={{ color }}>
+      <span aria-hidden="true" className="h-2.5 w-2.5 flex-none rounded-full" style={{ background: color }} />
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="truncate text-[18px] font-semibold">{step.name}</span>
+        <span className="text-[12px] font-bold tracking-[0.08em] uppercase" style={{ color }}>
           {KIND_LABEL[step.kind]}
         </span>
       </span>
       <span className="shrink-0">
         <StepDetail step={step} />
       </span>
-      <ChevronRight size={18} className="shrink-0 text-muted" aria-hidden="true" />
+      <span aria-hidden="true" className="shrink-0 text-[22px] leading-none text-secondary">›</span>
     </button>
   );
 }
@@ -243,16 +235,16 @@ function BlockHeader({ block, collapsed, onClick }: { block: Block; collapsed: b
     <button
       type="button"
       onClick={onClick}
-      className={`flex min-h-14 w-full items-center justify-between gap-3 border border-line-strong bg-sunken px-3.5 py-2 text-left ${
-        collapsed ? 'rounded-md' : 'rounded-t-md border-b-0'
+      className={`flex min-h-14 w-full items-center gap-3 border border-line-strong bg-sunken px-3.5 py-2 text-left ${
+        collapsed ? 'rounded-lg' : 'rounded-t-lg border-b-0'
       }`}
     >
-      <span className="flex min-w-0 items-center gap-2.5">
-        <Repeat size={16} strokeWidth={2} className="shrink-0 text-accent" aria-hidden="true" />
-        <span className="truncate text-[15px] font-semibold">{block.name}</span>
+      <span aria-hidden="true" className="h-3.5 w-3.5 flex-none rounded-full bg-magenta" />
+      <span className="jb-display min-w-0 flex-1 truncate text-[22px]" style={{ fontStretch: '88%' }}>
+        {block.name}
       </span>
-      <span className="shrink-0 font-mono text-[12px] tracking-[0.06em] text-accent uppercase">
-        {block.repeat} × · {formatClock(blockSeconds(block))}
+      <span className="shrink-0 text-[15px] text-muted">
+        <span className="jb-num text-[16px] text-accent">{block.repeat}×</span> · {formatClock(blockSeconds(block))}
       </span>
     </button>
   );
@@ -260,12 +252,12 @@ function BlockHeader({ block, collapsed, onClick }: { block: Block; collapsed: b
 
 function BlockFooter({ onAddStep, onAddBlock }: { onAddStep: () => void; onAddBlock: () => void }) {
   return (
-    <div className="grid grid-cols-2 gap-2 rounded-b-md border border-t-0 border-line-strong bg-sunken p-2">
-      <button type="button" className="p-btn p-btn-secondary p-btn-sm" onClick={onAddStep}>
-        <Plus size={15} strokeWidth={2} /> Passo aqui
+    <div className="grid grid-cols-2 gap-2 rounded-b-lg border border-t-0 border-line-strong bg-sunken p-2">
+      <button type="button" className="jb-btn jb-btn-neutral jb-btn-sm" onClick={onAddStep}>
+        <Plus size={15} strokeWidth={2.4} /> Passo aqui
       </button>
-      <button type="button" className="p-btn p-btn-secondary p-btn-sm" onClick={onAddBlock}>
-        <Plus size={15} strokeWidth={2} /> Bloco aqui
+      <button type="button" className="jb-btn jb-btn-neutral jb-btn-sm" onClick={onAddBlock}>
+        <Plus size={15} strokeWidth={2.4} /> Bloco aqui
       </button>
     </div>
   );

@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Check, Flag } from 'lucide-react';
+import { Check } from 'lucide-react';
 import type { Session } from '../types';
 import { saveHistoryEntry } from '../lib/storage';
 import { formatClock, newId } from '../lib/session';
-import { effortColor } from '../lib/effort';
-import RingGauge from './pulso/RingGauge';
+import StatPair from './jb/StatPair';
 import { btnGhost, btnPrimary, inputClass, labelClass } from './ui';
 
 interface Props {
@@ -38,50 +37,43 @@ export default function SummaryScreen({ session, finished, totalSeconds, stepsCo
     onDone();
   }
 
-  const done = stepsTotal > 0 ? stepsCompleted / stepsTotal : 0;
-  const ringColor = finished ? 'var(--p-volt-500)' : 'var(--p-plasma-500)';
+  const pct = stepsTotal > 0 ? Math.round((stepsCompleted / stepsTotal) * 100) : 0;
 
   return (
-    <div className="flex h-full justify-center bg-[var(--surface-void)]">
+    <div className="flex h-full justify-center bg-[var(--jb-ink-900)]">
       <div
-        className="h-full w-full max-w-[430px] overflow-y-auto bg-app px-[var(--gutter)]"
+        className="h-full w-full max-w-[430px] overflow-y-auto bg-app px-[var(--screen-gutter)]"
         style={{
           paddingTop: 'calc(24px + env(safe-area-inset-top))',
           paddingBottom: 'calc(24px + env(safe-area-inset-bottom))',
         }}
       >
-        <div className="flex flex-col gap-8">
-          <div className="flex flex-col gap-3">
-            <span className="p-label" style={{ color: finished ? 'var(--text-accent)' : 'var(--text-heat)' }}>
-              {finished ? 'Sessão concluída' : 'Sessão encerrada'}
-            </span>
-            <h1 className="p-display text-[28px] leading-[1.05]">
+        <div className="flex flex-col gap-[var(--section-gap)]">
+          <div className="flex flex-col gap-1">
+            <span className="jb-eyebrow">{session.name}</span>
+            <h1 className="jb-display jb-display--condensed m-0 text-[52px]">
               {finished ? 'Treino concluído' : 'Treino encerrado'}
-              <span className="text-accent">.</span>
             </h1>
-            <p className="text-[15px] text-secondary">{session.name}</p>
           </div>
 
-          <div className="p-dot-grid flex items-center gap-5 rounded-lg border border-line-subtle bg-sunken p-[18px]">
-            <RingGauge value={done} size={128} stroke={8} color={ringColor}>
+          <div className="jb-card-hero flex flex-col gap-5 p-5">
+            <div className="flex items-center justify-between gap-3">
+              <span className="jb-eyebrow">Resultado</span>
               {finished ? (
-                <Check size={34} strokeWidth={2.5} style={{ color: ringColor }} />
+                <span className="jb-pill jb-pill-crimson">Meta atingida</span>
               ) : (
-                <Flag size={30} strokeWidth={2} style={{ color: ringColor }} />
+                <span className="jb-pill jb-pill-neutral">Parcial</span>
               )}
-            </RingGauge>
-            <div className="flex min-w-0 flex-1 flex-col gap-3.5">
-              <div className="flex flex-col gap-1">
-                <span className="font-mono text-[10px] tracking-[0.12em] text-muted uppercase">Tempo total</span>
-                <span className="p-num text-[26px]">{formatClock(totalSeconds)}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <StatPair value={formatClock(totalSeconds)} label="Tempo total" size={40} accent />
+              <StatPair value={`${stepsCompleted}/${stepsTotal}`} label="Passos feitos" size={40} />
+            </div>
+            <div className="flex items-center gap-3.5">
+              <div className="jb-track flex-1">
+                <span style={{ width: `${pct}%`, transition: 'width var(--duration-slow) var(--ease-standard)' }} />
               </div>
-              <div className="flex flex-col gap-1">
-                <span className="font-mono text-[10px] tracking-[0.12em] text-muted uppercase">Passos feitos</span>
-                <span className="flex items-baseline gap-1">
-                  <span className="p-num text-[26px]">{stepsCompleted}</span>
-                  <span className="p-unit">/ {stepsTotal}</span>
-                </span>
-              </div>
+              <span className="text-[18px] font-bold text-accent">{pct}%</span>
             </div>
           </div>
 
@@ -90,32 +82,21 @@ export default function SummaryScreen({ session, finished, totalSeconds, stepsCo
             <div className="grid grid-cols-5 gap-2">
               {RPE_VALUES.map((n) => {
                 const selected = rpe === n;
-                const color = effortColor(n);
                 return (
                   <button
                     key={n}
                     type="button"
                     aria-pressed={selected}
                     onClick={() => setRpe(selected ? undefined : n)}
-                    className="p-num flex min-h-12 items-center justify-center rounded-md border text-[17px] transition-colors duration-[140ms]"
-                    style={
-                      selected
-                        ? {
-                            background: color,
-                            borderColor: color,
-                            color: 'var(--p-void)',
-                            boxShadow: `0 0 18px color-mix(in oklab, ${color} 45%, transparent)`,
-                          }
-                        : { background: 'var(--surface-sunken)', borderColor: 'var(--border-default)', color: 'var(--text-secondary)' }
-                    }
+                    className={`jb-num flex min-h-12 items-center justify-center rounded-full text-[20px] transition-colors duration-[140ms] ${
+                      selected ? 'bg-crimson text-white shadow-[var(--glow-accent)]' : 'bg-fill text-secondary'
+                    }`}
                   >
                     {n}
                   </button>
                 );
               })}
             </div>
-            {/* Cold → hot: the one place the intensity gradient is used */}
-            <div className="mt-2.5 h-1 rounded-full" style={{ background: 'var(--gradient-intensity)' }} />
           </div>
 
           <label>
@@ -129,10 +110,10 @@ export default function SummaryScreen({ session, finished, totalSeconds, stepsCo
           </label>
 
           <div className="flex flex-col gap-2">
-            <button className={`${btnPrimary} p-btn-lg w-full`} onClick={save}>
-              <Check size={19} strokeWidth={2.5} /> Salvar no histórico
+            <button className={`${btnPrimary} jb-btn-lg w-full`} onClick={save}>
+              <Check size={22} strokeWidth={3} /> Salvar no histórico
             </button>
-            <button className={`${btnGhost} w-full`} onClick={onDone}>Não salvar</button>
+            <button className={`${btnGhost} w-full`} onClick={onDone}>Não salvar ›</button>
           </div>
         </div>
       </div>

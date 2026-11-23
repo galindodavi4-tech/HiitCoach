@@ -16,13 +16,11 @@ import { flatten } from '../lib/flatten';
 import type { RunStep } from '../lib/flatten';
 import { createTimer } from '../lib/timer';
 import type { TimerState } from '../lib/timer';
-import { KIND_LABEL, stepColor } from '../lib/labels';
+import { KIND_LABEL, stepColor, textOn } from '../lib/labels';
 import { formatClock } from '../lib/session';
 import { Check, Pause, Play, SkipBack, SkipForward, X } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import SummaryScreen from '../components/SummaryScreen';
-import Badge from '../components/pulso/Badge';
-import RingGauge from '../components/pulso/RingGauge';
 import { btnPrimary } from '../components/ui';
 
 type Timer = ReturnType<typeof createTimer>;
@@ -37,19 +35,7 @@ const timedSeconds = (s: RunStep) => (s.mode === 'manual' ? 0 : s.seconds ?? 0);
 
 function nextDetail(step: RunStep): string {
   if (step.mode === 'manual') return 'Manual';
-  return step.mode === 'reps' ? `${step.reps ?? 0} reps` : formatClock(step.seconds ?? 0);
-}
-
-// Ring diameter that fits the phone screen, in px
-function useRingSize(): number {
-  const measure = () => Math.round(Math.min(window.innerWidth - 64, window.innerHeight * 0.4, 340));
-  const [size, setSize] = useState(measure);
-  useEffect(() => {
-    const onResize = () => setSize(measure());
-    window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
-  }, []);
-  return size;
+  return step.mode === 'reps' ? `${step.reps ?? 0}×` : formatClock(step.seconds ?? 0);
 }
 
 export default function RunPage() {
@@ -58,7 +44,6 @@ export default function RunPage() {
   const session = useMemo(() => (id ? getSession(id) : undefined), [id]);
   const steps = useMemo(() => (session ? flatten(session.root) : []), [session]);
 
-  const ringSize = useRingSize();
   const timerRef = useRef<Timer | null>(null);
   const [state, setState] = useState<TimerState | null>(null);
   const [confirmStop, setConfirmStop] = useState(false);
@@ -134,7 +119,7 @@ export default function RunPage() {
   if (!session || steps.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-6 bg-app px-6 text-center">
-        <p className="text-[17px] text-secondary">
+        <p className="text-[18px] text-secondary">
           {session ? 'Esta sessão ainda não tem passos.' : 'Sessão não encontrada.'}
         </p>
         <Link to="/sessoes" className={btnPrimary}>Voltar às sessões</Link>
@@ -167,43 +152,29 @@ export default function RunPage() {
     ? (startsAt[state.index] + doneInStep) / totalSeconds
     : state.index / steps.length;
 
-  // How much of the current timed step is left, for the ring
-  const stepFraction = remainingSec === null || timedSeconds(step) === 0
-    ? 1
-    : state.remainingMs! / 1000 / timedSeconds(step);
+  // How much of the current timed step is done, for the step progress bar
+  const stepDone = remainingSec === null || timedSeconds(step) === 0
+    ? 0
+    : 1 - state.remainingMs! / 1000 / timedSeconds(step);
+  const fg = textOn(color);
+  const pct = Math.min(1, Math.max(0, progress));
   const next = state.next;
 
   return (
     <div
-      className="flex h-full justify-center bg-[var(--surface-void)]"
+      className="flex h-full justify-center bg-[var(--jb-ink-900)]"
       // After a page reload there was no Start tap, so any tap here turns sound on
       onPointerDown={() => {
         if (!audioReady()) unlockAudio();
       }}
     >
       <div
-        className="relative flex h-full w-full max-w-[430px] flex-col"
-        style={{
-          // Flat tint of the step colour: the whole screen changes with the step kind
-          backgroundColor: `color-mix(in oklab, ${color} 13%, var(--surface-app))`,
-          transition: 'background-color var(--dur-base) var(--ease-out)',
-          paddingTop: 'env(safe-area-inset-top)',
-        }}
+        className="relative flex h-full w-full max-w-[430px] flex-col bg-app"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <div className="h-1.5 w-full bg-[var(--p-carbon-700)]">
-          <div
-            className="h-full"
-            style={{
-              width: `${Math.min(1, Math.max(0, progress)) * 100}%`,
-              background: color,
-              boxShadow: `0 0 12px ${color}`,
-            }}
-          />
-        </div>
-
-        <header className="flex items-center justify-between gap-3 px-[var(--gutter)] pt-3">
+        <header className="flex items-center gap-3 px-[var(--screen-gutter)] pt-3">
           <button
-            className="p-icon-btn p-icon-btn-ghost"
+            className="jb-icon-btn"
             aria-label="Parar treino"
             onClick={() => {
               // Hold the clock while the dialog is open, unless it was already stopped
@@ -212,120 +183,123 @@ export default function RunPage() {
               setConfirmStop(true);
             }}
           >
-            <X size={22} strokeWidth={2} />
+            <X size={22} strokeWidth={2.4} />
           </button>
-          {state.paused ? (
-            <Badge color="var(--warning)">Pausado</Badge>
-          ) : (
-            <Badge color="var(--p-plasma-400)" live>Ao vivo</Badge>
-          )}
-          <div className="min-w-0 text-right">
-            <p className="p-label text-primary">
-              Rodada {step.round} de {step.totalRounds}
-            </p>
-            <p className="truncate text-[13px] text-muted">{step.blockName}</p>
+          <div className="min-w-0 flex-1">
+            <p className="jb-eyebrow">Rodada {step.round} de {step.totalRounds}</p>
+            <p className="truncate text-[15px] text-secondary">{step.blockName}</p>
           </div>
+          {state.paused ? (
+            <span className="jb-pill jb-pill-neutral">Pausado</span>
+          ) : (
+            <span className="jb-pill jb-pill-crimson">Ao vivo</span>
+          )}
         </header>
 
-        <main className="flex flex-1 flex-col items-center justify-center gap-5 overflow-y-auto px-[var(--gutter)] text-center">
-          <div className="flex flex-col items-center gap-3">
-            <span className="font-mono text-[12px] font-medium tracking-[0.14em] uppercase" style={{ color }}>
-              {KIND_LABEL[step.kind]}
-            </span>
-            <h1 className="p-display text-[30px] leading-[1.08] font-semibold">{step.name}</h1>
+        {/* Whole-session progress */}
+        <div className="flex items-center gap-3 px-[var(--screen-gutter)] pt-3">
+          <div className="jb-track h-2 flex-1">
+            <span style={{ width: `${pct * 100}%` }} />
           </div>
+          <span className="text-[15px] font-bold text-accent">{Math.round(pct * 100)}%</span>
+        </div>
 
-          {step.mode === 'manual' && (
-            <button className={`${btnPrimary} p-btn-lg h-28 w-full text-[18px]`} onClick={() => timer.next()}>
-              <Check size={26} strokeWidth={2.5} /> Concluído
-            </button>
-          )}
+        <main className="flex flex-1 flex-col gap-3 overflow-y-auto px-[var(--screen-gutter)] py-4">
+          {/* Scoreboard panel: a flat block in the step colour, readable from a distance */}
+          <div
+            className="flex flex-1 flex-col items-center justify-center gap-4 rounded-[var(--radius-xl)] px-4 py-6 text-center"
+            style={{ background: color, color: fg, transition: 'background var(--duration-base) var(--ease-standard)' }}
+          >
+            <span className="text-[13px] font-bold tracking-[0.14em] uppercase opacity-85">{KIND_LABEL[step.kind]}</span>
+            <h1 className="jb-display jb-display--condensed m-0 text-[44px] break-words">{step.name}</h1>
 
-          {step.mode === 'reps' && (
-            <RingGauge value={stepFraction} size={ringSize} color={color}>
-              <span className="flex items-baseline gap-1">
-                <span className="p-num" style={{ fontSize: Math.round(ringSize * 0.3), letterSpacing: '-0.05em' }}>
-                  {step.reps ?? 0}
+            {step.mode === 'manual' && (
+              <button
+                className="jb-btn jb-btn-lg mt-2 w-full bg-[var(--jb-ink-950)] text-white"
+                onClick={() => timer.next()}
+              >
+                <Check size={24} strokeWidth={3} /> Concluído
+              </button>
+            )}
+
+            {step.mode === 'reps' && (
+              <>
+                <span className="jb-num" style={{ fontSize: 'min(36vw, 150px)', fontStretch: '110%' }}>
+                  {step.reps ?? 0}×
                 </span>
-                <span className="p-unit text-[14px]">reps</span>
-              </span>
-              {remainingSec !== null && (
-                <span className="font-mono text-[18px] font-medium" style={{ color }}>
-                  {formatClock(remainingSec)}
-                </span>
-              )}
-            </RingGauge>
-          )}
+                {remainingSec !== null && (
+                  <span className="jb-num text-[34px] opacity-85">{formatClock(remainingSec)}</span>
+                )}
+              </>
+            )}
 
-          {step.mode === 'time' && remainingSec !== null && (
-            <RingGauge value={stepFraction} size={ringSize} color={color}>
+            {step.mode === 'time' && remainingSec !== null && (
               <span
-                className="p-num"
-                style={{
-                  fontSize: Math.round(ringSize * (remainingSec >= 600 ? 0.2 : 0.25)),
-                  letterSpacing: '-0.05em',
-                }}
+                className="jb-num"
+                style={{ fontSize: remainingSec >= 600 ? 'min(22vw, 100px)' : 'min(30vw, 128px)', fontStretch: '110%' }}
               >
                 {formatClock(remainingSec)}
               </span>
-            </RingGauge>
-          )}
+            )}
 
-          {step.notes && <p className="max-w-sm text-[15px] text-secondary">{step.notes}</p>}
+            {step.notes && <p className="max-w-sm text-[17px] font-semibold opacity-90">{step.notes}</p>}
+          </div>
+
+          {remainingSec !== null && (
+            <div className="jb-track">
+              <span style={{ width: `${Math.min(1, Math.max(0, stepDone)) * 100}%`, background: color }} />
+            </div>
+          )}
         </main>
 
-        {/* Docked action panel */}
+        {/* Docked CTA band */}
         <div
-          className="flex flex-col gap-3 border-t border-line bg-surface-1 px-[var(--gutter)] pt-3.5"
-          style={{ boxShadow: 'var(--shadow-sheet)', paddingBottom: 'calc(18px + env(safe-area-inset-bottom))' }}
+          className="flex flex-col gap-3 border-t border-line-subtle bg-app px-[var(--screen-gutter)] pt-3"
+          style={{ boxShadow: 'var(--elev-dock)', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))' }}
         >
-          <div className="flex min-h-11 items-center gap-3">
-            {next ? (
-              <>
-                <span className="p-label shrink-0">A seguir</span>
-                <span
-                  aria-hidden="true"
-                  className="h-5 w-1.5 shrink-0 rounded-xs"
-                  style={{ background: stepColor(next) }}
-                />
-                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold">{next.name}</span>
-                <span className="shrink-0 font-mono text-[12px] tracking-[0.06em] text-muted uppercase">
-                  {nextDetail(next)}
-                </span>
-              </>
-            ) : (
-              <span className="p-label text-accent">Último passo. Vai até o fim.</span>
-            )}
-          </div>
+          {next ? (
+            <div className="flex min-h-12 items-center gap-3 rounded-lg bg-fill px-4 py-2.5">
+              <span className="shrink-0 text-[12px] font-bold tracking-[0.08em] text-secondary uppercase">A seguir</span>
+              <span className="w-px self-stretch bg-line-strong" />
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: stepColor(next) }} />
+              <span className="min-w-0 flex-1 truncate text-[17px] font-bold">{next.name}</span>
+              <span className="jb-num shrink-0 text-[18px]">{nextDetail(next)}</span>
+            </div>
+          ) : (
+            <div className="flex min-h-12 items-center rounded-lg bg-[var(--jb-crimson-wash)] px-4">
+              <span className="jb-display text-[18px] text-accent">Último passo. Até o fim.</span>
+            </div>
+          )}
 
           <div className="flex items-center gap-3">
             <button
-              className="p-icon-btn h-[60px] w-[60px]"
+              className="jb-icon-btn h-[60px] w-[60px]"
               aria-label="Voltar ao passo anterior"
               onClick={() => timer.previous()}
             >
-              <SkipBack size={22} strokeWidth={2} />
+              <SkipBack size={24} strokeWidth={2.2} />
             </button>
             <button
-              className={`p-btn p-btn-lg flex-1 ${state.paused ? 'p-btn-primary' : 'p-btn-secondary'}`}
+              className={`jb-btn jb-btn-lg flex-1 ${state.paused ? 'jb-btn-primary' : 'jb-btn-neutral'}`}
               disabled={remainingSec === null}
               onClick={() => (state.paused ? timer.resume() : timer.pause())}
             >
               {state.paused ? (
                 <>
-                  <Play size={19} strokeWidth={2} fill="currentColor" /> Retomar
+                  <Play size={20} strokeWidth={2} fill="currentColor" /> Retomar
                 </>
               ) : (
                 <>
-                  <Pause size={19} strokeWidth={2} fill="currentColor" /> Pausar
+                  <Pause size={20} strokeWidth={2} fill="currentColor" /> Pausar
                 </>
               )}
             </button>
-            <button className="p-icon-btn h-[60px] w-[60px]" aria-label="Pular passo" onClick={() => timer.next()}>
-              <SkipForward size={22} strokeWidth={2} />
+            <button className="jb-icon-btn h-[60px] w-[60px]" aria-label="Pular passo" onClick={() => timer.next()}>
+              <SkipForward size={24} strokeWidth={2.2} />
             </button>
           </div>
         </div>
+
         {confirmStop && (
           <ConfirmDialog
             title="Parar o treino?"

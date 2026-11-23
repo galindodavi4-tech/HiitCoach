@@ -13,14 +13,16 @@ import {
   replaceItem,
 } from '../lib/session';
 import { unlockAudio } from '../lib/cues';
+import { flatten } from '../lib/flatten';
 import BlockSheet from '../components/BlockSheet';
 import ChoiceGroup from '../components/ChoiceGroup';
 import ItemList from '../components/ItemList';
 import StepSheet from '../components/StepSheet';
 import Stepper from '../components/Stepper';
-import Eyebrow from '../components/pulso/Eyebrow';
+import SectionHeading from '../components/jb/SectionHeading';
+import StatPair from '../components/jb/StatPair';
 import { btnPrimary, btnSecondary, inputClass, labelClass } from '../components/ui';
-import { ChevronLeft, Play, Plus } from 'lucide-react';
+import { Play, Plus } from 'lucide-react';
 
 // parentId is set only for a new item that has not been added yet
 type StepEdit = { step: Step; parentId: string | null };
@@ -35,10 +37,8 @@ export default function SessionEditorPage() {
   if (!session) {
     return (
       <section>
-        <p className="mb-4 text-[15px] text-muted">Sessão não encontrada.</p>
-        <Link to="/sessoes" className={btnSecondary}>
-          <ChevronLeft size={17} strokeWidth={2} /> Voltar
-        </Link>
+        <p className="mb-4 text-[16px] text-muted">Sessão não encontrada.</p>
+        <Link to="/sessoes" className={btnSecondary}>‹ Voltar</Link>
       </section>
     );
   }
@@ -71,24 +71,39 @@ export default function SessionEditorPage() {
     setBlockEdit(null);
   }
 
+  const stepCount = flatten(root).length;
+
   return (
-    <section className="flex flex-col gap-8">
-      <div className="flex items-center justify-between gap-3">
-        <Link to="/sessoes" className="-ml-2 flex min-h-11 items-center gap-1 pr-2 text-[14px] font-semibold text-accent">
-          <ChevronLeft size={20} strokeWidth={2} /> Sessões
-        </Link>
-        <span className="flex items-baseline gap-2">
-          <span className="p-label">Total</span>
-          <span className="p-num text-[22px]">{formatClock(blockSeconds(root))}</span>
-        </span>
+    <section className="flex flex-col gap-[var(--section-gap)]">
+      <Link
+        to="/sessoes"
+        className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full bg-card-raised py-2 pr-[18px] pl-3.5 text-[16px] font-semibold transition-colors duration-[140ms] hover:bg-[var(--surface-muted-hover)]"
+      >
+        <span className="text-[1.1em] leading-none">‹</span> Sessões
+      </Link>
+
+      {/* Black header block with the session stats */}
+      <div className="jb-card-hero flex flex-col gap-4 p-5">
+        <span className="jb-eyebrow">{CATEGORY_LABEL[session.category]}</span>
+        <h1 className="jb-display jb-display--condensed m-0 text-[40px] break-words">{session.name || 'Sem nome'}</h1>
+        <div className="grid grid-cols-3 gap-3 border-t border-line-subtle pt-4">
+          <StatPair value={formatClock(blockSeconds(root))} label="Total" size={26} accent />
+          <StatPair value={stepCount} label="Passos" size={26} />
+          <StatPair value={`${root.repeat}×`} label="Rodadas" size={26} />
+        </div>
       </div>
 
+      <Link to={`/rodar/${session.id}`} onClick={unlockAudio} className={`${btnPrimary} jb-btn-lg w-full`}>
+        <Play size={20} strokeWidth={2} fill="currentColor" /> Iniciar treino
+      </Link>
+
       <div className="flex flex-col gap-5">
+        <SectionHeading>Configuração</SectionHeading>
         <div>
           <label className={labelClass} htmlFor="session-name">Nome da sessão</label>
           <input
             id="session-name"
-            className={`${inputClass} font-display text-[18px] font-semibold tracking-[-0.02em]`}
+            className={`${inputClass} text-[18px] font-bold`}
             value={session.name}
             onChange={(e) => update({ name: e.target.value })}
           />
@@ -104,26 +119,18 @@ export default function SessionEditorPage() {
         </div>
 
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[15px] font-medium text-secondary">Repetir a sessão inteira</span>
+          <span className="text-[17px] font-semibold">Repetir a sessão inteira</span>
           <Stepper value={root.repeat} unit="×" onChange={(repeat) => setRoot({ ...root, repeat })} />
         </div>
       </div>
 
-      <Link
-        to={`/rodar/${session.id}`}
-        onClick={unlockAudio}
-        className={`${btnPrimary} p-btn-lg w-full`}
-      >
-        <Play size={19} strokeWidth={2} fill="currentColor" /> Iniciar sessão
-      </Link>
-
-      <div className="flex flex-col gap-3">
-        <Eyebrow tone="volt" trailing={`${root.items.length} itens`}>Passos</Eyebrow>
-        <p className="text-[13px] text-muted">
+      <div className="flex flex-col gap-[var(--stack-gap)]">
+        <SectionHeading trailing={`${root.items.length} itens`}>Passos</SectionHeading>
+        <p className="text-[15px] text-secondary">
           Toque num cartão para editar. Segure e arraste para mudar a ordem ou para colocar dentro ou fora de um bloco.
         </p>
         {root.items.length === 0 ? (
-          <p className="rounded-md border border-dashed border-line-strong p-6 text-center text-[14px] text-muted">
+          <p className="rounded-lg border border-dashed border-line-strong p-6 text-center text-[16px] text-muted">
             Nenhum passo ainda. Use os botões abaixo.
           </p>
         ) : (
@@ -139,13 +146,14 @@ export default function SessionEditorPage() {
 
         <div className="grid grid-cols-2 gap-3">
           <button className={btnSecondary} onClick={() => setStepEdit({ step: createStep(), parentId: root.id })}>
-            <Plus size={17} strokeWidth={2} /> Passo
+            <Plus size={18} strokeWidth={2.6} /> Passo
           </button>
           <button className={btnSecondary} onClick={() => setBlockEdit({ block: createBlock(), parentId: root.id })}>
-            <Plus size={17} strokeWidth={2} /> Bloco
+            <Plus size={18} strokeWidth={2.6} /> Bloco
           </button>
         </div>
       </div>
+
       {stepEdit && (
         <StepSheet
           step={stepEdit.step}

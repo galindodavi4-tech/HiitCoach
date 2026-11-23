@@ -38,7 +38,7 @@ export default function BlockSheet({ block, isNew, onSave, onDelete, onClose }: 
         </div>
 
         {error && (
-          <p className="rounded-md border border-[rgba(255,61,90,.4)] bg-[var(--wash-danger)] px-3.5 py-3 text-[14px] text-danger">
+          <p className="rounded-md border border-[var(--border-accent-soft)] bg-[var(--jb-crimson-wash)] px-3.5 py-3 text-[15px] font-semibold text-[var(--jb-magenta-300)]">
             {error}
           </p>
         )}

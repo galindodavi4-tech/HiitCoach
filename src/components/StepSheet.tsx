@@ -4,7 +4,7 @@ import { KIND_COLOR, KIND_LABEL, MODE_LABEL } from '../lib/labels';
 import BottomSheet from './BottomSheet';
 import ChoiceGroup from './ChoiceGroup';
 import ConfirmDialog from './ConfirmDialog';
-import Switch from './pulso/Switch';
+import Switch from './jb/Switch';
 import { btnDanger, btnPrimary, btnSecondary, inputClass, labelClass } from './ui';
 
 interface Props {
@@ -106,7 +106,7 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
                   onChange={(e) => setMinutes(e.target.value)}
                   aria-label="Minutos"
                 />
-                <span className="p-unit">min</span>
+                <span className="text-[15px] font-semibold text-muted">min</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
@@ -119,14 +119,14 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
                   onChange={(e) => setSeconds(e.target.value)}
                   aria-label="Segundos"
                 />
-                <span className="p-unit">s</span>
+                <span className="text-[15px] font-semibold text-muted">s</span>
               </label>
             </div>
           </div>
         )}
 
         {mode === 'manual' && (
-          <p className="text-[14px] text-muted">No modo manual, o passo espera você tocar em Concluído.</p>
+          <p className="text-[15px] text-muted">No modo manual, o passo espera você tocar em Concluído.</p>
         )}
 
         <div>
@@ -151,7 +151,7 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
           />
         </div>
 
-        <div className="flex flex-col gap-3 rounded-md border border-line-subtle bg-surface-1 p-3.5">
+        <div className="flex flex-col gap-3 rounded-lg border border-line-subtle bg-sunken p-4">
           <Switch
             label="Cor personalizada"
             description="Por padrão, a cor vem do tipo do passo."
@@ -160,10 +160,10 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
           />
           {customColor && (
             <label className="flex items-center justify-between gap-3">
-              <span className="p-label">Cor</span>
+              <span className="jb-eyebrow jb-eyebrow--muted">Cor</span>
               <input
                 type="color"
-                className="h-11 w-16 cursor-pointer rounded-sm border border-line bg-sunken p-1"
+                className="h-11 w-16 cursor-pointer rounded-md border border-line bg-[var(--surface-input)] p-1"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
                 aria-label="Cor"
@@ -173,7 +173,7 @@ export default function StepSheet({ step, isNew, onSave, onDelete, onClose }: Pr
         </div>
 
         {error && (
-          <p className="rounded-md border border-[rgba(255,61,90,.4)] bg-[var(--wash-danger)] px-3.5 py-3 text-[14px] text-danger">
+          <p className="rounded-md border border-[var(--border-accent-soft)] bg-[var(--jb-crimson-wash)] px-3.5 py-3 text-[15px] font-semibold text-[var(--jb-magenta-300)]">
             {error}
           </p>
         )}

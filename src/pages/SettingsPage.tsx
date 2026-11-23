@@ -3,10 +3,10 @@ import { loadSettings, saveSettings } from '../lib/storage';
 import type { Settings } from '../lib/storage';
 import { speak, startBeep, unlockAudio, vibrate } from '../lib/cues';
 import { wakeLockSupported } from '../lib/wakeLock';
-import { AlertTriangle, Volume2 } from 'lucide-react';
-import Eyebrow from '../components/pulso/Eyebrow';
-import Switch from '../components/pulso/Switch';
-import Title from '../components/pulso/Title';
+import { Volume2 } from 'lucide-react';
+import ScreenTitle from '../components/jb/ScreenTitle';
+import SectionHeading from '../components/jb/SectionHeading';
+import Switch from '../components/jb/Switch';
 import { btnSecondary } from '../components/ui';
 
 type Toggle = 'beeps' | 'voice' | 'vibration';
@@ -34,14 +34,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <section className="flex flex-col gap-8">
-      <Title>Ajustes</Title>
+    <section className="flex flex-col gap-[var(--section-gap)]">
+      <ScreenTitle eyebrow="Personalizado para você">Ajustes</ScreenTitle>
 
-      <div className="flex flex-col gap-3">
-        <Eyebrow>Sinais durante o treino</Eyebrow>
-        <div className="p-card flex flex-col divide-y divide-line-subtle px-4">
+      <div className="flex flex-col gap-[var(--stack-gap)]">
+        <SectionHeading>Sinais no treino</SectionHeading>
+        <div className="jb-card flex flex-col divide-y divide-line-subtle px-4">
           {TOGGLES.map((t) => (
-            <div key={t.key} className="py-3.5">
+            <div key={t.key} className="py-4">
               <Switch
                 label={t.label}
                 description={t.hint}
@@ -53,14 +53,14 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <Eyebrow>Áudio</Eyebrow>
-        <div className="p-card flex flex-col gap-2 px-4 pt-4 pb-2">
+      <div className="flex flex-col gap-[var(--stack-gap)]">
+        <SectionHeading>Áudio</SectionHeading>
+        <div className="jb-card flex flex-col gap-3 px-4 pt-4 pb-2">
           <label htmlFor="volume" className="flex items-baseline justify-between">
-            <span className="text-[15px] font-medium">Volume</span>
+            <span className="text-[18px] font-bold">Volume</span>
             <span className="flex items-baseline gap-1">
-              <span className="p-num text-[22px]">{Math.round(settings.volume * 100)}</span>
-              <span className="p-unit">%</span>
+              <span className="jb-num text-[28px] text-accent">{Math.round(settings.volume * 100)}</span>
+              <span className="text-[15px] font-semibold text-muted">%</span>
             </span>
           </label>
           <input
@@ -69,26 +69,24 @@ export default function SettingsPage() {
             min={0}
             max={100}
             step={5}
-            className="p-range"
+            className="jb-range"
+            aria-label="Volume"
             value={Math.round(settings.volume * 100)}
             onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
           />
         </div>
 
         <button className={btnSecondary} onClick={test}>
-          <Volume2 size={17} strokeWidth={2} /> Testar som
+          <Volume2 size={19} strokeWidth={2.2} /> Testar som
         </button>
       </div>
 
       {!wakeLockSupported() && (
-        <div className="flex gap-3 rounded-md border border-[rgba(255,176,31,.4)] bg-[var(--wash-warning)] p-3.5">
-          <AlertTriangle size={18} strokeWidth={2} className="mt-0.5 shrink-0 text-warning" />
-          <div className="flex flex-col gap-1">
-            <span className="font-mono text-[10.5px] tracking-[0.12em] text-warning uppercase">Tela</span>
-            <p className="text-[14px] text-secondary">
-              Este navegador não consegue manter a tela ligada sozinho. Use o Chrome e abra o app pelo endereço https.
-            </p>
-          </div>
+        // Tips callout: the one place the blue info colours are used
+        <div className="flex flex-col gap-2 rounded-r-[var(--radius-sm)] border-l-4 border-[var(--jb-info-border)] bg-[var(--jb-info-bg)] px-4 py-3.5">
+          <span className="text-[16px] text-info">
+            Dica: este navegador não consegue manter a tela ligada sozinho. Use o Chrome e abra o app pelo endereço https.
+          </span>
         </div>
       )}
     </section>

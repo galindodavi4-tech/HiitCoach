@@ -7,12 +7,12 @@ export const KIND_LABEL: Record<StepKind, string> = {
   cooldown: 'Desaquecimento',
 };
 
-// PULSO energy colours: volt = ready, plasma = effort, ion = recovery, zone 1 = cool down
+// JogaBR palette: amber = get ready, crimson = effort, blue = rest, magenta = cool down
 export const KIND_COLOR: Record<StepKind, string> = {
-  prep: '#CCFF00',
-  work: '#FF4A1F',
-  rest: '#1FE2FF',
-  cooldown: '#6E8BFF',
+  prep: '#FFB020',
+  work: '#E30B60',
+  rest: '#7E9CFF',
+  cooldown: '#F320D7',
 };
 
 export const MODE_LABEL: Record<StepMode, string> = {
@@ -41,5 +41,13 @@ export function textOn(hex: string): string {
   const r = (n >> 16) & 255;
   const g = (n >> 8) & 255;
   const b = n & 255;
-  return 0.299 * r + 0.587 * g + 0.114 * b > 160 ? '#0A0D00' : '#F5F7F9';
+  return 0.299 * r + 0.587 * g + 0.114 * b > 150 ? '#000000' : '#FFFFFF';
 }
+
+// 4px classification rail on session cards
+export const CATEGORY_RAIL: Record<Category, string> = {
+  HIITCoach: 'var(--rail-accent)',
+  FQB: 'var(--jb-magenta-500)',
+  Cardio: 'var(--rail-neutral)',
+  Custom: 'var(--surface-muted)',
+};

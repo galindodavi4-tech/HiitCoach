@@ -1,58 +1,51 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import { CalendarDays, SlidersHorizontal, Timer } from 'lucide-react';
+import { CalendarDays, Settings, Timer } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import Wordmark from './pulso/Wordmark';
+import Wordmark from './jb/Wordmark';
 
 const tabs: { to: string; label: string; icon: LucideIcon }[] = [
   { to: '/sessoes', label: 'Sessões', icon: Timer },
   { to: '/historico', label: 'Histórico', icon: CalendarDays },
-  { to: '/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
+  { to: '/ajustes', label: 'Ajustes', icon: Settings },
 ];
 
 export default function Layout() {
   return (
-    <div className="flex h-full justify-center bg-[var(--surface-void)]">
-      <div className="relative h-full w-full max-w-[430px] bg-app">
+    <div className="flex h-full justify-center bg-[var(--jb-ink-900)]">
+      <div className="flex h-full w-full max-w-[430px] flex-col bg-app">
         <main
-          className="h-full overflow-y-auto px-[var(--gutter)]"
-          style={{
-            paddingTop: 'calc(16px + env(safe-area-inset-top))',
-            // Content scrolls under the floating dock
-            paddingBottom: 'calc(var(--tabbar-height) + var(--tabbar-inset) + 32px + env(safe-area-inset-bottom))',
-          }}
+          className="flex-1 overflow-y-auto px-[var(--screen-gutter)] pb-8"
+          style={{ paddingTop: 'calc(16px + env(safe-area-inset-top))' }}
         >
-          <div className="mb-6 flex h-6 items-center">
+          <div className="mb-6 flex h-7 items-center">
             <Wordmark />
           </div>
           <Outlet />
         </main>
 
-        {/* Floating capsule dock: the active tab expands into a volt pill with its label */}
+        {/* Fixed bottom tab bar: magenta when active */}
         <nav
-          className="absolute flex gap-1 rounded-full border border-line bg-surface-2 p-1.5"
-          style={{
-            left: 'var(--tabbar-inset)',
-            right: 'var(--tabbar-inset)',
-            bottom: 'calc(var(--tabbar-inset) + env(safe-area-inset-bottom))',
-            height: 'var(--tabbar-height)',
-            boxShadow: 'var(--shadow-dock)',
-          }}
+          className="grid grid-cols-3 border-t border-line-subtle bg-app"
+          style={{ boxShadow: 'var(--elev-dock)', paddingBottom: 'env(safe-area-inset-bottom)' }}
         >
           {tabs.map(({ to, label, icon: Icon }) => (
             <NavLink
               key={to}
               to={to}
-              aria-label={label}
               className={({ isActive }) =>
-                `flex min-w-0 items-center justify-center gap-2 rounded-full text-[13px] font-semibold transition-all duration-[240ms] ease-[cubic-bezier(.16,1,.3,1)] ${
-                  isActive ? 'flex-[1_1_auto] bg-volt text-[var(--text-on-accent)]' : 'flex-[1_1_0] text-muted'
+                `flex h-[var(--tabbar-height)] flex-col items-center justify-center gap-[5px] transition-colors duration-[140ms] ${
+                  isActive ? 'text-accent' : 'text-muted'
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={20} strokeWidth={isActive ? 2.25 : 1.75} aria-hidden="true" />
-                  {isActive && <span className="whitespace-nowrap">{label}</span>}
+                  <Icon size={24} strokeWidth={isActive ? 2.4 : 2} aria-hidden="true" />
+                  <span
+                    className={`text-[11px] tracking-[0.08em] uppercase ${isActive ? 'font-bold' : 'font-semibold'}`}
+                  >
+                    {label}
+                  </span>
                 </>
               )}
             </NavLink>
