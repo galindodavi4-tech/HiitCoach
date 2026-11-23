@@ -37,6 +37,8 @@ export default defineConfig({
         globIgnores: ['**/*-cyrillic*', '**/*-vietnamese*'],
         // Any route (e.g. /rodar/abc) opens the cached app
         navigateFallback: 'index.html',
+        // Server pages (OAuth login, API) must reach the network, not the cached app
+        navigateFallbackDenylist: [/^\/api\//, /^\/oauth\//, /^\/\.well-known\//],
       },
     }),
   ],
