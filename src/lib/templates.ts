@@ -33,6 +33,14 @@ function biSet(id: string, name: string, rounds: number, a: Step, b: Step, restS
   };
 }
 
+// 30 s to lay out the cones for the next drill
+function setup(id: string, next: string): Step {
+  return {
+    type: 'step', id, name: 'Montar circuito', kind: 'prep', mode: 'time', seconds: 30,
+    notes: `Prepare os cones para: ${next}`, voiceCue: 'Monte o próximo circuito',
+  };
+}
+
 const PICK_NOTE = 'Escolha um exercício deste treino: toque no passo para trocar o nome.';
 
 export const TEMPLATES: Session[] = [
@@ -94,7 +102,8 @@ export const TEMPLATES: Session[] = [
     ],
   }),
   // FQB technical session (30 min): Preparação, Ativação pré-guerra, Guerra and Missão pós-guerra.
-  // Rest ranges are set to a value inside the range (5–20 s → 10 s, 0–30 s → 15 s).
+  // Rest ranges are set to a value inside the range (5–20 s → 10 s). A 30 s 'Montar circuito'
+  // step before each drill gives time to lay out the cones; in Missão it also covers the 0–30 s rest.
   template('fqb-tecnico-sola-conducao', 'FQB - Treino técnico: Sola + Condução', 'FQB', {
     type: 'block', id: 'root', name: 'Sessão', repeat: 1,
     items: [
@@ -102,6 +111,7 @@ export const TEMPLATES: Session[] = [
         type: 'block', id: 'prep', name: 'Preparação', repeat: 1,
         items: [
           { type: 'step', id: 'prep-aq', name: 'Aquecimento Livre', kind: 'prep', mode: 'time', seconds: 40, notes: 'Rápida' },
+          setup('prep-esc-setup', 'Escadinha Bote Lateral'),
           {
             type: 'block', id: 'prep-esc', name: 'Escadinha', repeat: 3,
             items: [timed('prep-esc-ex', 'Escadinha Bote Lateral', 10, 'Rápida · sem descanso')],
@@ -111,10 +121,12 @@ export const TEMPLATES: Session[] = [
       {
         type: 'block', id: 'ativ', name: 'Ativação pré-guerra', repeat: 1,
         items: [
+          setup('ativ-1-setup', 'Ball Mastery Sola + Embaixadinha Curta'),
           biSet('ativ-1', 'Ativação · Bi-set 1', 2,
             timed('ativ-1a', 'Ball Mastery Sola', 15),
             timed('ativ-1b', 'Embaixadinha Curta', 35),
             10, 'Descanso de 5 a 20 s'),
+          setup('ativ-2-setup', 'Ball Mastery Vai e Volta + Embaixadinha com a Cabeça'),
           biSet('ativ-2', 'Ativação · Bi-set 2', 2,
             timed('ativ-2a', 'Ball Mastery Vai e Volta', 15),
             timed('ativ-2b', 'Embaixadinha com a Cabeça', 35),
@@ -124,14 +136,17 @@ export const TEMPLATES: Session[] = [
       {
         type: 'block', id: 'guerra', name: 'Guerra', repeat: 1,
         items: [
+          setup('guerra-1-setup', 'Rabisco Longo Externo + Passe de Primeira na Parede'),
           biSet('guerra-1', 'Guerra · Bi-set 1', 5,
             timed('guerra-1a', 'Rabisco Longo Externo', 15),
             timed('guerra-1b', 'Passe de Primeira na Parede', 35),
             10, 'Descanso de 5 a 20 s'),
+          setup('guerra-2-setup', 'Rabisco Longo Interno + Wall Turn'),
           biSet('guerra-2', 'Guerra · Bi-set 2', 5,
             timed('guerra-2a', 'Rabisco Longo Interno', 15),
             timed('guerra-2b', 'Wall Turn', 35),
             10, 'Descanso de 5 a 20 s'),
+          setup('guerra-3-setup', 'Condução + Turn 5m Variação 1 + Embaixadinha Curta Pé Não Dominante'),
           biSet('guerra-3', 'Guerra · Bi-set 3', 5,
             timed('guerra-3a', 'Condução + Turn 5m Variação 1', 15),
             timed('guerra-3b', 'Embaixadinha Curta Pé Não Dominante', 35),
@@ -141,14 +156,15 @@ export const TEMPLATES: Session[] = [
       {
         type: 'block', id: 'missao', name: 'Missão pós-guerra', repeat: 1,
         items: [
+          setup('missao-rab-setup', 'Rabisco Curto Interno'),
           {
             // 30 reps with a 5 min limit: the clock runs the limit; skip ahead when done
             type: 'step', id: 'missao-rab', name: 'Rabisco Curto Interno', kind: 'work', mode: 'reps', reps: 30, seconds: 300,
             notes: 'Sem errar · limite de 5 min. Terminou antes? Toque em pular.',
           },
-          rest('missao-rab-r', 15, 'Descanso de 0 a 30 s'),
+          setup('missao-ball-setup', 'Ball Mastery Sola'),
           timed('missao-ball', 'Ball Mastery Sola', 30, 'Sempre em deslocamento'),
-          rest('missao-ball-r', 15, 'Descanso de 0 a 30 s'),
+          setup('missao-final-setup', 'seu exercício preferido + o de maior dificuldade'),
           biSet('missao-final', 'Até completar o tempo', 3,
             timed('missao-final-a', 'Seu exercício preferido', 20, PICK_NOTE),
             timed('missao-final-b', 'Seu exercício de maior dificuldade', 20, PICK_NOTE),
