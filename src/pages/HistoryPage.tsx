@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Category, HistoryEntry } from '../types';
-import { deleteHistoryEntry, loadHistory } from '../lib/storage';
+import { SYNCED_EVENT, deleteHistoryEntry, loadHistory } from '../lib/storage';
 import { CATEGORIES, CATEGORY_LABEL, CATEGORY_RAIL } from '../lib/labels';
 import { formatClock } from '../lib/session';
 import BottomSheet from '../components/BottomSheet';
@@ -28,6 +28,12 @@ export default function HistoryPage() {
   const [filter, setFilter] = useState<Category | 'all'>('all');
   const [selected, setSelected] = useState<HistoryEntry | null>(null);
   const [toDelete, setToDelete] = useState<HistoryEntry | null>(null);
+
+  useEffect(() => {
+    const reload = () => setEntries(loadHistory());
+    window.addEventListener(SYNCED_EVENT, reload);
+    return () => window.removeEventListener(SYNCED_EVENT, reload);
+  }, []);
 
   const thisYear = new Date().getFullYear();
   const [year, setYear] = useState(thisYear);

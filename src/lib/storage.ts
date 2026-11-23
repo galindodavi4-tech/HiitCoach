@@ -3,6 +3,17 @@ import type { Category, HistoryEntry, Session } from '../types';
 const SESSIONS_KEY = 'hiitcoach.sessions';
 const SETTINGS_KEY = 'hiitcoach.settings';
 const HISTORY_KEY = 'hiitcoach.history';
+// Item id → ISO time it was deleted, so the deletion reaches the server on sync
+const DELETED_KEY = 'hiitcoach.deleted';
+
+// Fired after any local change to trainings or history; sync listens for it
+export const CHANGED_EVENT = 'hiitcoach:changed';
+// Fired after a sync brought new data in; pages reload from storage
+export const SYNCED_EVENT = 'hiitcoach:synced';
+
+function changed() {
+  window.dispatchEvent(new Event(CHANGED_EVENT));
+}
 
 // The app used to be called JogaBR. Move data saved under the old keys and
 // category name so nothing is lost after the rename. Runs once per device.
@@ -50,6 +61,22 @@ function write(key: string, value: unknown): void {
   localStorage.setItem(key, JSON.stringify(value));
 }
 
+function markDeleted(id: string) {
+  write(DELETED_KEY, { ...loadDeleted(), [id]: new Date().toISOString() });
+}
+
+export function loadDeleted(): Record<string, string> {
+  const d = read<Record<string, string>>(DELETED_KEY, {});
+  return d && typeof d === 'object' && !Array.isArray(d) ? d : {};
+}
+
+// Replaces everything with the result of a sync (does not fire CHANGED_EVENT)
+export function replaceSyncedData(data: { sessions: Session[]; history: HistoryEntry[]; deleted: Record<string, string> }) {
+  write(SESSIONS_KEY, data.sessions);
+  write(HISTORY_KEY, data.history);
+  write(DELETED_KEY, data.deleted);
+}
+
 export function loadSessions(): Session[] {
   const sessions = read<Session[]>(SESSIONS_KEY, []);
   return Array.isArray(sessions) ? sessions : [];
@@ -66,10 +93,13 @@ export function saveSession(session: Session): void {
   if (index >= 0) sessions[index] = session;
   else sessions.push(session);
   write(SESSIONS_KEY, sessions);
+  changed();
 }
 
 export function deleteSession(id: string): void {
   write(SESSIONS_KEY, loadSessions().filter((s) => s.id !== id));
+  markDeleted(id);
+  changed();
 }
 
 export interface Settings {
@@ -97,8 +127,11 @@ export function loadHistory(): HistoryEntry[] {
 
 export function saveHistoryEntry(entry: HistoryEntry): void {
   write(HISTORY_KEY, [...loadHistory().filter((e) => e.id !== entry.id), entry]);
+  changed();
 }
 
 export function deleteHistoryEntry(id: string): void {
   write(HISTORY_KEY, loadHistory().filter((e) => e.id !== id));
+  markDeleted(id);
+  changed();
 }

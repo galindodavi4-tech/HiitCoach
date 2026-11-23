@@ -1,8 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { Session } from '../types';
-import { deleteSession, loadSessions, saveSession } from '../lib/storage';
+import { SYNCED_EVENT, deleteSession, loadSessions, saveSession } from '../lib/storage';
 import { CATEGORY_LABEL, CATEGORY_RAIL } from '../lib/labels';
 import { blockSeconds, createSession, duplicateSession, formatClock } from '../lib/session';
 import { TEMPLATES, sessionFromTemplate } from '../lib/templates';
@@ -29,6 +29,13 @@ export default function SessionsPage() {
   const [sessions, setSessions] = useState(loadSorted);
   const [toDelete, setToDelete] = useState<Session | null>(null);
   const [notice, setNotice] = useState<Notice | null>(null);
+
+  // Trainings created on another device or by Claude show up after a sync
+  useEffect(() => {
+    const reload = () => setSessions(loadSorted());
+    window.addEventListener(SYNCED_EVENT, reload);
+    return () => window.removeEventListener(SYNCED_EVENT, reload);
+  }, []);
 
   function create() {
     const session = createSession();

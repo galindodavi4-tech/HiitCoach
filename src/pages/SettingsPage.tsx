@@ -7,6 +7,7 @@ import { Volume2 } from 'lucide-react';
 import ScreenTitle from '../components/jb/ScreenTitle';
 import SectionHeading from '../components/jb/SectionHeading';
 import Switch from '../components/jb/Switch';
+import AccountCard from '../components/AccountCard';
 import { btnSecondary } from '../components/ui';
 
 type Toggle = 'beeps' | 'voice' | 'vibration';
@@ -36,6 +37,8 @@ export default function SettingsPage() {
   return (
     <section className="flex flex-col gap-[var(--section-gap)]">
       <ScreenTitle eyebrow="Personalizado para você">Ajustes</ScreenTitle>
+
+      <AccountCard />
 
       <div className="flex flex-col gap-[var(--stack-gap)]">
         <SectionHeading>Sinais no treino</SectionHeading>
